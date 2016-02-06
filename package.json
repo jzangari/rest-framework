@@ -1,0 +1,19 @@
+{
+  "name": "rest-framework",
+  "version": "0.0.1",
+  "description": "Exploratory attempt at no nonsense rest frameowrk for node.",
+  "main": "app.js",
+  "scripts": {
+    "test": "nodeunit tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jzangari/rest-framework.git"
+  },
+  "author": "Joshua Zangari <josh@downhomehightech.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jzangari/rest-framework/issues"
+  },
+  "homepage": "https://github.com/jzangari/rest-framework#readme"
+}
