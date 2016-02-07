@@ -3,13 +3,13 @@ var restAPI = require('./rest-api');
 var portNumber = 8080;
 
 //Resources
-restAPI.addResource('hello-world', require('./hello-world'));
+restAPI.addResource('configurations', require('./configurations'));
 
 //Filters
 restAPI.filterChain.push(require('./authorization-filter').filter);
 
 //Start the Server listening on port.
-http.createServer(restAPI.requestDispatcher).listen(portNumber);
+http.createServer(restAPI.handleRequest).listen(portNumber);
 
 
 

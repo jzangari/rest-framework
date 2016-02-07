@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/jzangari/rest-framework/issues"
   },
-  "homepage": "https://github.com/jzangari/rest-framework#readme"
+  "homepage": "https://github.com/jzangari/rest-framework#readme",
+  "dependencies": {
+    "mongodb":"~2.0.33"
+  }
 }
