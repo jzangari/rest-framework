@@ -1,11 +1,14 @@
-var rd, http, portNumber, returnCode, contentType;
+var http = require('http');
+var restAPI = require('./rest-api');
+var portNumber = 8080;
 
-portNumber = 8080;
 
-requestDispatcher = require('./request_dispatcher');
+restAPI.addResource('hello-world', require('./hello-world'));
 
-http = require('http');
-http.createServer(requestDispatcher).listen(portNumber);
+http.createServer(restAPI.requestDispatcher).listen(portNumber);
+
+
+
 
 
 
