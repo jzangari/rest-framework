@@ -1,5 +1,5 @@
-var configurationAccess = require('./configuration-access');
-var responseBuilder = require('./response-builder');
+var configurationService = require('./configuration-service');
+var responseBuilder = require('./../../response-builder');
 var resource = 'configurations';
 module.exports = {
     'GET' : function get(httpRequest, httpResponse, id){
@@ -17,7 +17,7 @@ module.exports = {
 
     'POST' : function post(httpRequest, httpResponse, body){
             var configuration = JSON.parse(body);
-            var id = configurationAccess.addConfiguration(configuration);
+            var id = configurationService.addConfiguration(configuration);
             var returnCode = 201;
             var response = JSON.stringify({
                 'location': responseBuilder.buildLocation(httpRequest, resource, id)
@@ -27,20 +27,24 @@ module.exports = {
             httpResponse.end(response);
     },
 
-    'PUT' : function put(){
-
+    'PUT' : function put(httpRequest, httpResponse, body, id){
+        var configuration = JSON.parse(body);
+        configurationService.updateConfiguration(id, configuration);
+        var returnCode = 204;
+        responseBuilder.writeHeaders(httpResponse, 0, returnCode);
+        httpResponse.end();
     }
 };
 
 function getConfiguration(id) {
-    var configuration = configurationAccess.getConfiguration(id);
+    var configuration = configurationService.getConfiguration(id);
     if (configuration != null && configuration != undefined) {
         return JSON.stringify(configuration);
     }
 };
 
 function allConfigurations(httpRequest) {
-    var configKeys = configurationAccess.getConfigurationKeys();
+    var configKeys = configurationService.getConfigurationKeys();
     var configLocations = {}
     configKeys.forEach(function (key) {
         configLocations['key'] = responseBuilder.buildLocation(httpRequest, resource, key);
