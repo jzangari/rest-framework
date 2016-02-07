@@ -1,10 +1,5 @@
 module.exports = {
     'GET' : function(httpRequest, httpResponse){
-        var body = '';
-        httpRequest.on('data', function(data){
-            body = data.toString();
-        });
-
         httpRequest.on('end', function(){
             var outputString, bodyLength, returnCode, contentType;
 
@@ -26,12 +21,7 @@ module.exports = {
         });
     },
 
-    'POST' : function(httpRequest, httpResponse){
-        var body = '';
-        httpRequest.on('data', function(data){
-            body = data.toString();
-        });
-
+    'POST' : function(httpRequest, httpResponse, body){
         httpRequest.on('end', function(){
             var outputString, bodyLength, returnCode, contentType;
 
