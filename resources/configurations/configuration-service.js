@@ -6,11 +6,16 @@ module.exports.addConfiguration = function addConfiguration(configuration){
     return uuid;
 };
 
-module.exports.getConfiguration = function getConfiguration(id){
-    return configurations[id];
-};
+module.exports.getConfiguration = function getConfiguration(id, notFound){
+    var configuration = configurations[id];
+    if (configuration != null && configuration != undefined) {
+        return JSON.stringify(configuration);
+    } else {
+        notFound();
+    }
+}
 
-module.exports.getConfigurationKeys = function getConfigurations(id){
+module.exports.getConfigurationKeys = function getConfigurationKeys(){
     var configList = [];
     for(var key in configurations){
         configList.push(key);
@@ -18,25 +23,29 @@ module.exports.getConfigurationKeys = function getConfigurations(id){
     return configList;
 };
 
-module.exports.updateConfiguration = function updateConfiguration(id, configurationUpdates){
-    var currentConfiguration = this.getConfiguration(id);
-    if(currentConfiguration == undefined){
-        throw { "status":404,
-            "message":'Not Found: Configuration for ID: ' + id
-        };
+module.exports.updateConfiguration = function updateConfiguration(id, configurationUpdates, notFound, badRequest){
+    var currentConfiguration = configurations[id];
+    if(currentConfiguration  == undefined){
+       notFound();
     }
     //Check to make sure the thing sent in actually is valid compared to the current version we have.
     for(var field in configurationUpdates){
         if(currentConfiguration[field] == undefined){
-            throw { "status":400,
-                "message":'Bad Request: Field is invalid for configuration:' + field
-            };
-
+            badRequest(field);
         }
     }
     //To avoid messy transaction handling, I'm just doing this in a separate loop.
     for(var field in configurationUpdates){
         currentConfiguration[field] = configurationUpdates[field];
+    }
+};
+
+
+module.exports.removeConfiguration = function removeConfiguration(id, notFound){
+    if(configurations[id] != undefined){
+        delete configurations[id];
+    } else {
+        notFound();
     }
 };
 

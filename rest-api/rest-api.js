@@ -51,11 +51,10 @@ function dispatch(clientRequest, serverResponse){
             readBodyEventHandling(clientRequest, serverResponse, method, urlTokens);
             break;
         case 'GET':
-            get(clientRequest, serverResponse, method, urlTokens)
+            method(clientRequest, serverResponse, urlTokens[2]);
             break;
         case 'DELETE':
-            serverResponse.writeHead(405);
-            serverResponse.end('Not Supported: ' + method);
+            method(clientRequest, serverResponse, urlTokens[2]);
             break;
         default:
             serverResponse.writeHead(405);
@@ -63,16 +62,6 @@ function dispatch(clientRequest, serverResponse){
     }
 }
 
-function get(clientRequest, serverResponse, method, urlTokens){
-    //The second URL token is going to be where our ID's set, if they are there.
-    if(urlTokens[2] != undefined){
-        //Send with ID if it exist.
-        method(clientRequest, serverResponse, urlTokens[2]);
-    } else {
-        //without if it doesn't
-        method(clientRequest, serverResponse);
-    }
-}
 //TODO Fix: POSTs & PUTs with no data won't hit the events, and since there is no data, the request was bad.
 function readBodyEventHandling(clientRequest, serverResponse, method, urlTokens) {
     var body, methodCalled = false;
