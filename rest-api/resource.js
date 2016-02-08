@@ -1,16 +1,14 @@
-var configurationService = require('./configuration-service');
-var responseBuilder = require('./../../rest-api/response-builder');
-var Error = require('./../../rest-api/error');
-var resource = 'configurations';
+var responseBuilder = require('./response-builder');
+var Error = require('./error');
 module.exports = {
-    'GET' : function get(clientRequest, serverResponse, id){
+    'GET' : function get(clientRequest, serverResponse, id, service){
             var outputString, bodyLength, returnCode;
             if(id != undefined){
-                outputString = configurationService.getConfiguration(id, function(){
+                outputString = service.getById(id, function(){
                     responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
                 })
             } else {
-                outputString = allConfigurations(clientRequest);
+                outputString = allConfigurations(clientRequest.headers['host']);
             }
             returnCode = 200;
             bodyLength = Buffer.byteLength(outputString, 'utf-8');
@@ -18,21 +16,21 @@ module.exports = {
             serverResponse.end(outputString);
     },
 
-    'POST' : function post(clientRequest, serverResponse, body){
+    'POST' : function post(clientRequest, serverResponse, body, service){
             var configuration = JSON.parse(body);
-            var id = configurationService.addConfiguration(configuration);
+            var id = service.save(configuration);
             var returnCode = 201;
             var response = JSON.stringify({
-                'location': responseBuilder.buildLocation(clientRequest.headers['host'], resource, id)
+                'location': responseBuilder.buildLocation(clientRequest.headers['host'], service.resourceName, id)
             });
             var bodyLength = Buffer.byteLength(response, 'utf-8');
             responseBuilder.writeHeaders(serverResponse, bodyLength, returnCode);
             serverResponse.end(response);
     },
 
-    'PUT' : function put(clientRequest, serverResponse, body, id){
+    'PUT' : function put(clientRequest, serverResponse, body, id, service){
         var configuration = JSON.parse(body);
-        configurationService.updateConfiguration(id, configuration,
+        service.update(id, configuration,
             function(){
                 responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
             },
@@ -44,10 +42,10 @@ module.exports = {
         serverResponse.end();
     },
 
-    'DELETE' : function del(clientRequest, serverResponse, id){
+    'DELETE' : function del(clientRequest, serverResponse, id, service){
         var returnCode;
         if(id != undefined){
-            configurationService.removeConfiguration(id, function(){
+            service.del(id, function(){
                 responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
             });
         } else {
@@ -59,11 +57,11 @@ module.exports = {
     },
 };
 
-function allConfigurations(clientRequest) {
-    var configKeys = configurationService.getConfigurationKeys();
+function allConfigurations(host, service) {
+    var configKeys = service.getAllIds();
     var configLocations = []
     configKeys.forEach(function (id) {
-        configLocations.push(responseBuilder.buildLocation(clientRequest.headers['host'], resource, id));
+        configLocations.push(responseBuilder.buildLocation(host, service.resourceName, id));
     });
     return JSON.stringify(configLocations);
 };

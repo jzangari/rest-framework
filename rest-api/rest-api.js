@@ -1,3 +1,5 @@
+var resourceMethods = require('./resource');
+
 var resources = {};
 module.exports.addResource = function addResource(resourceName, endpoints){
     resources[resourceName] = endpoints;
@@ -5,6 +7,7 @@ module.exports.addResource = function addResource(resourceName, endpoints){
 
 var filterChain = [];
 module.exports.filterChain = filterChain;
+
 
 //Parse the URL and use the resources to select a resource.
 module.exports.handleRequest = function handleRequest(httpRequest, httpResponse){
@@ -29,32 +32,45 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
 
 function dispatch(clientRequest, serverResponse){
     //Look Up Resource by the first URL token, error if not found.
-    var urlTokens = clientRequest.url.split('/');
-    var resource = resources[urlTokens[1].toLowerCase()];
-    if(resource == undefined){
+    var urlTokens = clientRequest.url.trim().split('/');
+    var Service = resources[urlTokens[1].toLowerCase()];
+
+    if(Service == undefined){
         serverResponse.writeHead(404);
         serverResponse.end('Not Found: ' + serverResponse.url);
+    } else {
+       var service = new Service();
     }
 
-    //Look up method by the clientRequest.method field, error if unsupported by resource.
-    var method = resource[clientRequest.method];
-    if(method == undefined){
-        serverResponse.writeHead(405);
-        serverResponse.end('Unsupported Operation: ' + clientRequest.method);
-    }
 
     //Depending on the http request method, call the associated method type.
     // TODO Switch this to the http method
     switch(clientRequest.method){
         case 'POST':
+            if(typeof service.save === 'function'){
+                readBodyEventHandling(clientRequest, serverResponse, resourceMethods.POST, service, undefined);
+            } else {
+                serverResponse.writeHead(405);
+                serverResponse.end('Not Supported: ' + method);
+            }
+            break;
         case 'PUT':
-            readBodyEventHandling(clientRequest, serverResponse, method, urlTokens);
+            if(typeof service.update === 'function'){
+                readBodyEventHandling(clientRequest, serverResponse, resourceMethods.PUT, service, urlTokens);
+            } else {
+                serverResponse.writeHead(405);
+                serverResponse.end('Not Supported: ' + method);
+            }
             break;
         case 'GET':
-            method(clientRequest, serverResponse, urlTokens[2]);
+            if(typeof service.getById === 'function' && typeof service.getAllIds === 'function') {
+                resourceMethods.GET(clientRequest, serverResponse, urlTokens[2], service);
+            }
             break;
         case 'DELETE':
-            method(clientRequest, serverResponse, urlTokens[2]);
+            if(typeof service.del === 'function') {
+                resourceMethods.DELETE(clientRequest, serverResponse, urlTokens[2], service);
+            }
             break;
         default:
             serverResponse.writeHead(405);
@@ -63,19 +79,17 @@ function dispatch(clientRequest, serverResponse){
 }
 
 //TODO Fix: POSTs & PUTs with no data won't hit the events, and since there is no data, the request was bad.
-function readBodyEventHandling(clientRequest, serverResponse, method, urlTokens) {
+function readBodyEventHandling(clientRequest, serverResponse, httpMethod, service, urlTokens) {
     var body, methodCalled = false;
     clientRequest.on('data', function (data) {
         body = data.toString();
     });
     clientRequest.on('end', function () {
         methodCalled = true;
-        if(urlTokens[2] != undefined){
-            //Send with ID if it exist.
-            method(clientRequest, serverResponse,  body, urlTokens[2]);
+        if(urlTokens == undefined){
+            httpMethod(clientRequest, serverResponse, body, service);
         } else {
-            //without if it doesn't
-            method(clientRequest, serverResponse, body);
+            httpMethod(clientRequest, serverResponse, body, urlTokens[2], service);
         }
     });
 }

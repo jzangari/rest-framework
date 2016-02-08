@@ -1,12 +1,23 @@
+function ConfigurationService(){
+    this.resourceName = 'configurations'
+    this.save = addConfiguration;
+    this.getById = getConfiguration;
+    this.getAllIds = getConfigurationKeys;
+    this.update = updateConfiguration;
+    this.del = removeConfiguration;
+}
+
+module.exports = ConfigurationService;
+
 var configurations = {};
 
-module.exports.addConfiguration = function addConfiguration(configuration){
+function addConfiguration(configuration){
     var uuid = generateUUID();
     configurations[uuid] = configuration;
     return uuid;
 };
 
-module.exports.getConfiguration = function getConfiguration(id, notFound){
+function getConfiguration(id, notFound){
     var configuration = configurations[id];
     if (configuration != null && configuration != undefined) {
         return JSON.stringify(configuration);
@@ -15,7 +26,7 @@ module.exports.getConfiguration = function getConfiguration(id, notFound){
     }
 }
 
-module.exports.getConfigurationKeys = function getConfigurationKeys(){
+function getConfigurationKeys(){
     var configList = [];
     for(var key in configurations){
         configList.push(key);
@@ -23,7 +34,7 @@ module.exports.getConfigurationKeys = function getConfigurationKeys(){
     return configList;
 };
 
-module.exports.updateConfiguration = function updateConfiguration(id, configurationUpdates, notFound, badRequest){
+function updateConfiguration(id, configurationUpdates, notFound, badRequest){
     var currentConfiguration = configurations[id];
     if(currentConfiguration  == undefined){
        notFound();
@@ -41,7 +52,7 @@ module.exports.updateConfiguration = function updateConfiguration(id, configurat
 };
 
 
-module.exports.removeConfiguration = function removeConfiguration(id, notFound){
+function removeConfiguration(id, notFound){
     if(configurations[id] != undefined){
         delete configurations[id];
     } else {
