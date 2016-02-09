@@ -4,11 +4,12 @@ module.exports = {
     'GET' : function get(clientRequest, serverResponse, id, service){
             var outputString, bodyLength, returnCode;
             if(id != undefined){
-                outputString = service.getById(id, function(){
+                var response = service.getById(id, function(){
                     responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
                 })
+                outputString = JSON.stringify(response);
             } else {
-                outputString = allConfigurations(clientRequest.headers['host']);
+                outputString = getAllAndBuildResponse(service);
             }
             returnCode = 200;
             bodyLength = Buffer.byteLength(outputString, 'utf-8');
@@ -17,12 +18,14 @@ module.exports = {
     },
 
     'POST' : function post(clientRequest, serverResponse, body, service){
-            var configuration = JSON.parse(body);
-            var id = service.save(configuration);
-            var returnCode = 201;
-            var response = JSON.stringify({
-                'location': responseBuilder.buildLocation(clientRequest.headers['host'], service.resourceName, id)
+            var bodyObject = JSON.parse(body);
+            var saveResponse = service.save(bodyObject, function(status){
+                responseBuilder.writeHeaders(serverResponse, 0, status);
+                serverResponse.end();
             });
+            var returnCode = 201;
+            responseBuilder.buildLocation(clientRequest.headers['host'], service.resourceName, saveResponse.id, saveResponse.body)
+            var response = JSON.stringify(saveResponse.body);
             var bodyLength = Buffer.byteLength(response, 'utf-8');
             responseBuilder.writeHeaders(serverResponse, bodyLength, returnCode);
             serverResponse.end(response);
@@ -57,11 +60,13 @@ module.exports = {
     },
 };
 
-function allConfigurations(host, service) {
-    var configKeys = service.getAllIds();
-    var configLocations = []
-    configKeys.forEach(function (id) {
-        configLocations.push(responseBuilder.buildLocation(host, service.resourceName, id));
-    });
-    return JSON.stringify(configLocations);
+function getAllAndBuildResponse(service) {
+    var resources = service.getAll();
+    var resourceName = service.resourceName;
+    var allItemsResponse = {}
+    allItemsResponse[resourceName] = [];
+    for(var id in resources){
+        allItemsResponse[resourceName].push(resources[id]);
+    };
+    return JSON.stringify(allItemsResponse);
 };

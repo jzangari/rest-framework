@@ -5,7 +5,7 @@ module.exports.filter = function filter(httpRequest, httpResponse) {
     } else {
         var token = httpRequest.headers['auth-token'];
         if(token != undefined){
-            console.log('Authorizing request to: ' + httpRequest.url + ' having token: ' + token);
+            console.log('Authorizing postRequest to: ' + httpRequest.url + ' having token: ' + token);
             //TODO Validate token with database.
         } else {
             //TODO Return unauthorized response.

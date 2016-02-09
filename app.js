@@ -1,9 +1,14 @@
 var http = require('http');
 var restAPI = require('./rest-api/rest-api');
-var portNumber = process.env.PORT || 8080;
+var configResource = require('./resources/configuration-resource');
+var loginResource = require('./resources/login-resource');
+
+var portNumber = Number(process.env.PORT || 8080);
+
 
 //resources
-restAPI.addResource('configurations', require('./resources/configurations/configuration-service'));
+restAPI.addResource(configResource.resourceName, configResource);
+restAPI.addResource(loginResource.resourceName, loginResource);
 
 //Filters
 restAPI.filterChain.push(require('./filters/authorization-filter').filter);

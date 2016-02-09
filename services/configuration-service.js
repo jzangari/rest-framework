@@ -1,44 +1,27 @@
-function ConfigurationService(){
-    this.resourceName = 'configurations'
-    this.save = addConfiguration;
-    this.getById = getConfiguration;
-    this.getAllIds = getConfigurationKeys;
-    this.update = updateConfiguration;
-    this.del = removeConfiguration;
-}
-
-module.exports = ConfigurationService;
-
+//The "database" for now.
 var configurations = {};
 
-function addConfiguration(configuration){
+module.exports.addConfiguration = function(configuration){
     var uuid = generateUUID();
     configurations[uuid] = configuration;
-    return uuid;
+    return {"id":uuid,"body":configuration};
 };
 
-function getConfiguration(id, notFound){
+module.exports.getConfiguration = function(id, notFound){
     var configuration = configurations[id];
     if (configuration != null && configuration != undefined) {
-        return JSON.stringify(configuration);
+        return configuration;
     } else {
         notFound();
     }
 }
 
-function getConfigurationKeys(){
-    var configList = [];
-    for(var key in configurations){
-        configList.push(key);
-    }
-    return configList;
+module.exports.getConfigurations = function (){
+    return configurations;
 };
 
-function updateConfiguration(id, configurationUpdates, notFound, badRequest){
-    var currentConfiguration = configurations[id];
-    if(currentConfiguration  == undefined){
-       notFound();
-    }
+module.exports.updateConfiguration = function(id, configurationUpdates, notFound, badRequest){
+    var currentConfiguration = this.getConfiguration(id, notFound);
     //Check to make sure the thing sent in actually is valid compared to the current version we have.
     for(var field in configurationUpdates){
         if(currentConfiguration[field] == undefined){
@@ -51,8 +34,7 @@ function updateConfiguration(id, configurationUpdates, notFound, badRequest){
     }
 };
 
-
-function removeConfiguration(id, notFound){
+module.exports.removeConfiguration = function(id, notFound){
     if(configurations[id] != undefined){
         delete configurations[id];
     } else {

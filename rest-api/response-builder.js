@@ -12,6 +12,6 @@ module.exports.writeErrorResponse = function(serverResponse, error){
     serverResponse.end(outputString);
 }
 
-module.exports.buildLocation = function(host, resource, id){
-   return 'http://' + host + '/' + resource + '/' + id;
+module.exports.buildLocation = function(host, resource, id, configuration){
+   configuration.links = { "this":'http://' + host + '/' + resource + '/' + id};
 };
