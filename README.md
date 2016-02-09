@@ -4,7 +4,7 @@ Playground for developing a down and dirty, rest centric node framework.
 ##app.js
 Main file for the system, where the resources, filters, and server are setup. 
 
-##rest-api
+##/rest-api
 Hopefully this will be a module one day. 
 ###rest-api.js
 This is the main file for what will eventually be the entry point to a module. I handles the request, runs the filters, dispatches. 
@@ -15,13 +15,13 @@ The fledgeling beginnings of what I want to build out into a response building s
 ###error.js
 Defines an error class, I plan on building more of these classes to use in a code smell driven refactor. 
 
-##resources
+##/resources
 This is where I will put the "classes" that act as a map between the framework and a service method. 
 
-##services
+##/services
 Business logic, crud, etc. Service level code. 
 
-##test
+##/test
 Will be where the unit and integration tests live.. eventually. 
 
 
