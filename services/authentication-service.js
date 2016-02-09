@@ -18,7 +18,7 @@ timers.setInterval(
            }
         }
     },
-    300000
+    3000
 );
 
 // loginAttempt = { "username":"<username>", "password":"<password>" }
@@ -49,6 +49,21 @@ module.exports.getToken = function(token, notFound){
         notFound();
     }
 };
+
+module.exports.invalidateAuthentication = function(token){
+    if(tokenIndex[token] != undefined){
+        delete authorizationTokens[tokenIndex[token].username];
+        delete tokenIndex[token];
+    }
+}
+
+module.exports.authorizeToken = function(token){
+    if(tokenIndex[token] != undefined && tokenIndex[token].valid){
+        return true;
+    } else {
+        return false;
+    }
+}
 
 
 //I won't lie, I give credit where it is due, since I was worried about load testing and collision.
