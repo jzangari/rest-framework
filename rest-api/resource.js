@@ -3,7 +3,7 @@ var Error = require('./error');
 module.exports = {
     'GET' : function get(clientRequest, serverResponse, id, service){
             var outputString, bodyLength, returnCode;
-            if(id != undefined){
+            if(id != undefined && id != ''){
                 var response = service.getById(id, function(){
                     responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
                 })
