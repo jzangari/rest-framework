@@ -34,30 +34,26 @@ module.exports = {
             responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Cannot update a collection root.'));
         } else {
             service.update(id, configuration,
-                function () {
-                    responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
-                },
-                function (field) {
-                    responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad Request: Field is invalid for configuration:' + field));
+                function () {sendEmptyResponse(serverResponse);},
+                function (error) {
+                    responseBuilder.writeErrorResponse(serverResponse, error);
                 });
         }
-        var returnCode = 204;
-        responseBuilder.writeHeaders(serverResponse, 0, returnCode);
-        serverResponse.end();
     },
 
     'DELETE' : function del(clientRequest, serverResponse, id, service){
-        var returnCode;
         if(id != undefined){
-            service.del(id, function(){
-                responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
-            });
+            service.del(id,
+                function(){
+                    responseBuilder.writeHeaders(serverResponse, 0, 204);
+                    serverResponse.end();
+                },
+                function(error){
+                    responseBuilder.writeErrorResponse(serverResponse, error);
+                });
         } else {
-            responseBuilder.writeErrorResponse(serverResponse, new Error(40, 'Bad Request: Cannot Delete Collection.'));
+            responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad Request: Cannot Delete Collection.'));
         }
-        returnCode = 204;
-        responseBuilder.writeHeaders(serverResponse, 0, returnCode);
-        serverResponse.end();
     },
 };
 
@@ -88,4 +84,10 @@ function sendSingleResponse(serverResponse, statusCode, host, resourceName, resp
     var bodyLength = Buffer.byteLength(body, 'utf-8');
     responseBuilder.writeHeaders(serverResponse, bodyLength, statusCode);
     serverResponse.end(body);
+}
+
+function sendEmptyResponse(serverResponse){
+        var returnCode = 204;
+        responseBuilder.writeHeaders(serverResponse, 0, returnCode);
+        serverResponse.end();
 }

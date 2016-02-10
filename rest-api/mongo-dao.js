@@ -5,16 +5,25 @@ var assert = require('assert');
 var url = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/jzangari-tenable'
 
 module.exports.save = function(object, collectionName, successCallback, errorCallback){
-    callCollectionFunctionWithSingleInput(object, collectionName, successCallback, errorCallback, insertDocument);
+    callCollectionFunction([object], collectionName, successCallback, errorCallback, insertDocument);
 };
 
 module.exports.getById = function(id, collectionName, successCallback, errorCallback){
-    callCollectionFunctionWithSingleInput(id, collectionName, successCallback, errorCallback, findDocumentById);
+    callCollectionFunction([id], collectionName, successCallback, errorCallback, findDocumentById);
 };
 
 module.exports.getAll = function(collectionName, successCallback, errorCallback){
-    callCollectionFunctionWithSingleInput(null, collectionName, successCallback, errorCallback, getAllDocumentsInCollection);
+    callCollectionFunction([], collectionName, successCallback, errorCallback, getAllDocumentsInCollection);
 };
+
+module.exports.update = function(id, object, collectionName, successCallback, errorCallback){
+    callCollectionFunction([id, object], collectionName, successCallback, errorCallback, updateDocument);
+};
+
+module.exports.delete = function(id, collectionName, successCallback, errorCallback){
+    callCollectionFunction([id], collectionName, successCallback, errorCallback, deleteDocument);
+};
+
 
 var insertDocument = function(object, collectionName, db, successCallback, errorCallback) {
     db.collection(collectionName).insertOne(object, function(err) {
@@ -39,28 +48,64 @@ var findDocumentById = function(id, collectionName, db, successCallback, errorCa
 
 var getAllDocumentsInCollection = function(collectionName, db, successCallback, errorCallback){
     db.collection(collectionName).find({}, function(err, cursor){
-        var items = []
+        var returnItems = []
         cursor.toArray(function(err, responses){
+            //For each item delete the mongo and create a respone object to put into the return array.
             for(var current in responses){
                 checkError(err, errorCallback);
                 //Remove the MongoID from the document and create a response the Resource can map.
                 var id = responses[current]._id;
                 delete responses[current]['_id'];
-                items.push({
+                returnItems.push({
                     "id":id,
                     "body":responses[current]
                 });
             }
-            successCallback(items);
+            successCallback(returnItems);
         });
     });
 }
 
-var callCollectionFunctionWithSingleInput = function(object, collectionName, successCallback, errorCallback, method){
+var updateDocument = function(id, object, collectionName, db, successCallback, errorCallback) {
+    //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
+    var idSize = encodeURI(id).split(/%..|./).length - 1;
+    if(idSize < 12){
+        errorCallback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
+    }
+    //Set up updates object that mongo uses.
+    var updates = {
+        "$set":object
+    };
+    db.collection(collectionName).updateOne({"_id":ObjectID(id)}, updates, function(err, res){
+        if(res.modifiedCount == 1){
+           successCallback();
+        } else {
+            errorCallback(new Error(404, 'Not Found: ' + id ));
+        }
+    });
+};
+
+var deleteDocument = function(id, collectionName, db, successCallback, errorCallback) {
+    //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
+    var idSize = encodeURI(id).split(/%..|./).length - 1;
+    if(idSize < 12){
+        errorCallback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
+    }
+    db.collection(collectionName).findOneAndDelete({"_id":ObjectID(id)}, function(err, res){
+        if(!err){
+            successCallback();
+        } else {
+            errorCallback(new Error(404, 'Not Found: ' + id ));
+        }
+    });
+};
+
+
+var callCollectionFunction = function(input, collectionName, successCallback, errorCallback, method){
     MongoClient.connect(url, function(err, db) {
         checkError(err, errorCallback);
         //If there is no object passed in, call the method without it.
-        if(object == null){
+        if(input == null || input.length == 0){
             method(collectionName ,db,
                 function(response) {
                     db.close();
@@ -69,8 +114,16 @@ var callCollectionFunctionWithSingleInput = function(object, collectionName, suc
                 errorCallback
             );
         //Otherwise, call it with the object as the first argument.
-        } else {
-            method(object, collectionName, db,
+        } else if(input.length == 1) {
+            method(input[0], collectionName, db,
+                function (response) {
+                    db.close();
+                    successCallback(response);
+                },
+                errorCallback
+            );
+        } else if(input.length == 2) {
+            method(input[0], input[1], collectionName, db,
                 function (response) {
                     db.close();
                     successCallback(response);

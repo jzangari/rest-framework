@@ -5,6 +5,7 @@ var configurations = {};
 
 
 module.exports.addConfiguration = function(configuration, successCallback, errorCallback){
+    //TODO Validate the input configuration.
     mongoDAO.save(configuration, "configurations", successCallback, errorCallback);
 };
 
@@ -16,27 +17,11 @@ module.exports.getConfigurations = function (successCallback, errorCallback){
     mongoDAO.getAll("configurations", successCallback, errorCallback);
 };
 
-module.exports.updateConfiguration = function(id, configurationUpdates, notFound, badRequest){
-    var currentConfiguration = configurations[id];
-    if (currentConfiguration == null || currentConfiguration == undefined) {
-        notFound();
-    }
-    //Check to make sure the thing sent in actually is valid compared to the current version we have.
-    for(var field in configurationUpdates){
-        if(currentConfiguration[field] == undefined){
-            badRequest(field);
-        }
-    }
-    //To avoid messy transaction handling, I'm just doing this in a separate loop.
-    for(var field in configurationUpdates){
-        currentConfiguration[field] = configurationUpdates[field];
-    }
+module.exports.updateConfiguration = function(id, configurationUpdates, successCallback, errorCallback){
+    //TODO Validate the input configuration.\
+    mongoDAO.update(id, configurationUpdates, "configurations", successCallback, errorCallback);
 };
 
-module.exports.removeConfiguration = function(id, notFound){
-    if(configurations[id] != undefined){
-        delete configurations[id];
-    } else {
-        notFound();
-    }
+module.exports.removeConfiguration = function(id, successCallback, errorCallback){
+    mongoDAO.delete(id, "configurations", successCallback, errorCallback);
 };
