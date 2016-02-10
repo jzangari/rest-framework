@@ -2,35 +2,29 @@ var responseBuilder = require('./response-builder');
 var Error = require('./error');
 module.exports = {
     'GET' : function get(clientRequest, serverResponse, id, service){
-            var outputString, bodyLength, returnCode;
+            var outputString;
             if(id != undefined && id != ''){
-                var response = service.getById(id, function(){
-                    responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
-                })
-                outputString = JSON.stringify(response);
+                service.getById(id,
+                    function(saveResponse){
+                        singleResponse(serverResponse, 200, clientRequest.headers['host'], service.resourceName, saveResponse)
+                    },
+                    function(){
+                        responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
+                    }
+                );
             } else {
                 outputString = getAllAndBuildResponse(service);
             }
-            returnCode = 200;
-            bodyLength = Buffer.byteLength(outputString, 'utf-8');
-            responseBuilder.writeHeaders(serverResponse, bodyLength, returnCode);
-            serverResponse.end(outputString);
     },
 
     'POST' : function post(clientRequest, serverResponse, body, service){
             var bodyObject = JSON.parse(body);
             service.save(bodyObject,
-                function(status){
-                    responseBuilder.writeHeaders(serverResponse, 0, status);
-                    serverResponse.end();
-                },
                 function(saveResponse){
-                    var returnCode = 201;
-                    responseBuilder.buildLocation(clientRequest.headers['host'], service.resourceName, saveResponse.id, saveResponse.body)
-                    var response = JSON.stringify(saveResponse.body);
-                    var bodyLength = Buffer.byteLength(response, 'utf-8');
-                    responseBuilder.writeHeaders(serverResponse, bodyLength, returnCode);
-                    serverResponse.end(response);
+                    singleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, saveResponse)
+                },
+                function(){
+                    responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad requqest'));
                 }
             );
     },
@@ -78,3 +72,11 @@ function getAllAndBuildResponse(service) {
     };
     return JSON.stringify(allItemsResponse);
 };
+
+function singleResponse(serverResponse, statusCode, host, resourceName, response){
+    responseBuilder.buildLocation(host, resourceName, response.id, response.body)
+    var body = JSON.stringify(response.body);
+    var bodyLength = Buffer.byteLength(body, 'utf-8');
+    responseBuilder.writeHeaders(serverResponse, bodyLength, statusCode);
+    serverResponse.end(body);
+}

@@ -4,17 +4,12 @@ var mongoDAO = require('./../rest-api/mongo-dao');
 var configurations = {};
 
 
-module.exports.addConfiguration = function(configuration, errorCallback, successCallback){
-    mongoDAO.save(configuration, "configurations", errorCallback, successCallback);
+module.exports.addConfiguration = function(configuration, successCallback, errorCallback){
+    mongoDAO.save(configuration, "configurations", successCallback, errorCallback);
 };
 
-module.exports.getConfiguration = function(id, notFound){
-    var configuration = configurations[id];
-    if (configuration != null && configuration != undefined) {
-        return configuration;
-    } else {
-        notFound();
-    }
+module.exports.getConfiguration = function(id, successCallback, errorCallback){
+    mongoDAO.getById(id, "configurations", successCallback, errorCallback);
 }
 
 module.exports.getConfigurations = function (){
