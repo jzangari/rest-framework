@@ -19,16 +19,20 @@ module.exports = {
 
     'POST' : function post(clientRequest, serverResponse, body, service){
             var bodyObject = JSON.parse(body);
-            var saveResponse = service.save(bodyObject, function(status){
-                responseBuilder.writeHeaders(serverResponse, 0, status);
-                serverResponse.end();
-            });
-            var returnCode = 201;
-            responseBuilder.buildLocation(clientRequest.headers['host'], service.resourceName, saveResponse.id, saveResponse.body)
-            var response = JSON.stringify(saveResponse.body);
-            var bodyLength = Buffer.byteLength(response, 'utf-8');
-            responseBuilder.writeHeaders(serverResponse, bodyLength, returnCode);
-            serverResponse.end(response);
+            service.save(bodyObject,
+                function(status){
+                    responseBuilder.writeHeaders(serverResponse, 0, status);
+                    serverResponse.end();
+                },
+                function(saveResponse){
+                    var returnCode = 201;
+                    responseBuilder.buildLocation(clientRequest.headers['host'], service.resourceName, saveResponse.id, saveResponse.body)
+                    var response = JSON.stringify(saveResponse.body);
+                    var bodyLength = Buffer.byteLength(response, 'utf-8');
+                    responseBuilder.writeHeaders(serverResponse, bodyLength, returnCode);
+                    serverResponse.end(response);
+                }
+            );
     },
 
     'PUT' : function put(clientRequest, serverResponse, body, id, service){

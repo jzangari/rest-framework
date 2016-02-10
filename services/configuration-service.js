@@ -1,10 +1,11 @@
+var mongoDAO = require('./../rest-api/mongo-dao');
+
 //The "database" for now.
 var configurations = {};
 
-module.exports.addConfiguration = function(configuration){
-    var uuid = generateUUID();
-    configurations[uuid] = configuration;
-    return {"id":uuid,"body":configuration};
+
+module.exports.addConfiguration = function(configuration, errorCallback, successCallback){
+    mongoDAO.save(configuration, "configurations", errorCallback, successCallback);
 };
 
 module.exports.getConfiguration = function(id, notFound){
@@ -44,15 +45,3 @@ module.exports.removeConfiguration = function(id, notFound){
         notFound();
     }
 };
-
-//I won't lie, I give credit where it is due, since I was worried about load testing and collision.
-//http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
-function generateUUID(){
-    var d = new Date().getTime();
-    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = (d + Math.random()*16)%16 | 0;
-        d = Math.floor(d/16);
-        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
-    });
-    return uuid;
-}
