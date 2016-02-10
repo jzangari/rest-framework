@@ -1,7 +1,10 @@
 var http = require('http');
-var restAPI = require('./rest-api/rest-api');
 
-module.exports.server = http.createServer(restAPI.handleRequest);
+module.exports.server = null;
+
+module.exports.initialize = function (requestHandlerCallback) {
+    this.server = http.createServer(requestHandlerCallback);
+};
 
 module.exports.listen = function () {
     this.server.listen.apply(this.server, arguments);

@@ -4,6 +4,7 @@ var configResource = require('./../resources/configuration-resource');
 
 restAPI.addResource(configResource.resourceName, configResource);
 var server = require('./../server');
+server.initialize(restAPI.handleRequest);
 
 var address = 'http://localhost:3000';
 var endpoint = require("supertest-as-promised").agent(address);
