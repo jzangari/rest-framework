@@ -30,8 +30,9 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
         dispatch(httpRequest, httpResponse);
     //Node likes to die at the slightest error. I don't want it to die at the slightest error.
     } catch(err){
-        httpRequest.writeHead(500);
-        httpRequest.end("There was a Server Error while processing your request");
+        console.log(err.stack);
+        httpResponse.writeHead(500);
+        httpResponse.end("There was a Server Error while processing your request");
     }
 };
 

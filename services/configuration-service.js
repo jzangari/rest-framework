@@ -12,8 +12,8 @@ module.exports.getConfiguration = function(id, successCallback, errorCallback){
     mongoDAO.getById(id, "configurations", successCallback, errorCallback);
 }
 
-module.exports.getConfigurations = function (){
-    return configurations;
+module.exports.getConfigurations = function (successCallback, errorCallback){
+    mongoDAO.getAll("configurations", successCallback, errorCallback);
 };
 
 module.exports.updateConfiguration = function(id, configurationUpdates, notFound, badRequest){

@@ -2,29 +2,28 @@ var responseBuilder = require('./response-builder');
 var Error = require('./error');
 module.exports = {
     'GET' : function get(clientRequest, serverResponse, id, service){
-            var outputString;
             if(id != undefined && id != ''){
                 service.getById(id,
-                    function(saveResponse){
-                        singleResponse(serverResponse, 200, clientRequest.headers['host'], service.resourceName, saveResponse)
+                    function(response){
+                        sendSingleResponse(serverResponse, 200, clientRequest.headers['host'], service.resourceName, response)
                     },
                     function(){
                         responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
                     }
                 );
             } else {
-                outputString = getAllAndBuildResponse(service);
+                getAllAndBuildResponse(serverResponse, clientRequest.headers['host'], service);
             }
     },
 
     'POST' : function post(clientRequest, serverResponse, body, service){
             var bodyObject = JSON.parse(body);
             service.save(bodyObject,
-                function(saveResponse){
-                    singleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, saveResponse)
+                function(response){
+                    sendSingleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, response)
                 },
                 function(){
-                    responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad requqest'));
+                    responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad request'));
                 }
             );
     },
@@ -62,19 +61,29 @@ module.exports = {
     },
 };
 
-function getAllAndBuildResponse(service) {
-    var resources = service.getAll();
-    var resourceName = service.resourceName;
-    var allItemsResponse = {}
-    allItemsResponse[resourceName] = [];
-    for(var id in resources){
-        allItemsResponse[resourceName].push(resources[id]);
-    };
-    return JSON.stringify(allItemsResponse);
+function getAllAndBuildResponse(serverResponse, host, service) {
+    var items = []
+    service.getAll(
+        function(responses){
+            for(var current in responses){
+                var response = responses[current];
+                responseBuilder.addLocation(host, service.resourceName, response.id, response.body);
+                items.push(response.body);
+            }
+
+            var body = JSON.stringify(items);
+            var bodyLength = Buffer.byteLength(body, 'utf-8');
+            responseBuilder.writeHeaders(serverResponse, bodyLength, 200);
+            serverResponse.end(body);
+        },
+        function(err){
+            responseBuilder.writeErrorResponse(serverResponse, err);
+        }
+    );
 };
 
-function singleResponse(serverResponse, statusCode, host, resourceName, response){
-    responseBuilder.buildLocation(host, resourceName, response.id, response.body)
+function sendSingleResponse(serverResponse, statusCode, host, resourceName, response){
+    responseBuilder.addLocation(host, resourceName, response.id, response.body)
     var body = JSON.stringify(response.body);
     var bodyLength = Buffer.byteLength(body, 'utf-8');
     responseBuilder.writeHeaders(serverResponse, bodyLength, statusCode);
