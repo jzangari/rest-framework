@@ -33,13 +33,17 @@ module.exports = {
 
     'PUT' : function put(clientRequest, serverResponse, body, id, service){
         var configuration = JSON.parse(body);
-        service.update(id, configuration,
-            function(){
-                responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
-            },
-            function(field){
-                responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad Request: Field is invalid for configuration:' + field));
-            });
+        if(id == ''){
+            responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Cannot update a collection root.'));
+        } else {
+            service.update(id, configuration,
+                function () {
+                    responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
+                },
+                function (field) {
+                    responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad Request: Field is invalid for configuration:' + field));
+                });
+        }
         var returnCode = 204;
         responseBuilder.writeHeaders(serverResponse, 0, returnCode);
         serverResponse.end();

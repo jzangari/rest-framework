@@ -1,55 +1,106 @@
-var http = require('http');
-var https = require('https');
-var url = require('url');
+var assert = require('assert');
+var restAPI = require('./../rest-api/rest-api');
+var configResource = require('./../resources/configuration-resource');
 
+restAPI.addResource(configResource.resourceName, configResource);
+var server = require('./../server');
 
-var body = '';
-var options = {
-    "host": 'localhost',//'jzangari-tenable.herokuapp.com',
-    "port": 8080,
-    "path": '/configurations',
-    "method": 'POST'
-};
-var postRequest = http.request(options, function(response) {
-    console.log('STATUS: ' + response.statusCode);
-    console.log('HEADERS: ' + JSON.stringify(response.headers));
-    response.on('data', function (chunk) {
-        body = chunk.toString();
-        console.log('BODY: ' + body);
-        var result = JSON.parse(body);
-        if(result.location != undefined) {
-            var configUrl = url.parse(result.location);
-            options.path = configUrl.path;
-            options.method = 'GET';
-            try {
-                var getRequest = https.request(options, function (response) {
-                    console.log('STATUS: ' + response.statusCode);
-                    console.log('HEADERS: ' + JSON.stringify(response.headers));
-                    response.on('data', function (chunk) {
-                        console.log('BODY: ' + chunk);
-                        body = chunk;
-                    });
+var address = 'http://localhost:3000';
+var endpoint = require("supertest-as-promised").agent(address);
+
+describe('Test Configurations Resource',function(){
+    before(function () {
+        server.listen(3000)
+    });
+    after(function () {
+        server.close();
+    });
+    it('Create configuration, update it, get it, and check it for changes',function(done) {
+        //Create a new configuration
+        endpoint
+            .post('/configurations')
+            .send(
+                {
+                    "name": "resource",
+                    "hostname": "192.168.1.1",
+                    "port": 8080,
+                    "username": "jzangari"
+                }
+            )
+            .expect('Content-type', /json/)
+            .expect(201)
+            .then(
+                //Update a field in the config.
+                function(res){
+                    var url = res.body.links.this;
+                    var id = url.substr(url.lastIndexOf('/') + 1)
+                    endpoint
+                        .put('/configurations/'+ id)
+                        .send(
+                            {
+                                "name":"resource-endpoint"
+                            }
+                        )
+                        .expect("Content-type",/json/)
+                        .expect(204)
+                        .then(
+                            //get the config.
+                            function(res){
+                                var url = res.request.url;
+                                var id = url.substr(url.lastIndexOf('/') + 1)
+                                endpoint
+                                    .get('/configurations/'+ id)
+                                    .expect('Content-type',/json/)
+                                    .expect(200)
+                                    .then(
+                                    //Assert it looks how we expect.
+                                    function(res){
+                                        assert.equal('resource-endpoint', res.body.name, "The returned object's name did not match the expected on.");
+                                        assert.equal('jzangari', res.body.username, "The returned object's name did not match the expected on.");
+                                        assert.equal('192.168.1.1', res.body.hostname, "The returned object's name did not match the expected on.");
+                                        assert.equal('resource-endpoint', res.body.name, "The returned object's name did not match the expected on.");
+                                        assert.equal('resource-endpoint', res.body.name, "The returned object's name did not match the expected on.");
+
+                                        done();
+                                    });
+                            });
+                }
+            )
+
+            ;
+    });
+    it('Create configuration, get it, delete it, get it with 404',function(done) {
+        //Create a new configuration
+        endpoint
+            .post('/configurations')
+            .send(
+                {
+                    "name": "resource",
+                    "hostname": "192.168.1.1",
+                    "port": 8080,
+                    "username": "jzangari"
+                }
+            )
+            .expect('Content-type', /json/)
+            .expect(201)
+            .then(
+                function(res) {
+                    var url = res.body.links.this;
+                    var id = url.substr(url.lastIndexOf('/') + 1)
+                    endpoint
+                        .get('/configurations/' + id)
+                        .expect('Content-type', /json/)
+                        .expect(200)
+                        .then(
+                            function(res) {
+                                var url = res.request.url;
+                                var id = url.substr(url.lastIndexOf('/') + 1)
+                                endpoint
+                                    .delete('/configurations/' + id)
+                                    .expect('Content-type', /json/)
+                                    .expect(404);
+                                done();
+                            });
                 });
-                getRequest.end();
-            } catch (error){
-                console.log(error);
-            }
-        }
     });
 });
-postRequest.write(JSON.stringify(
-    {
-        "name":"config-servier",
-        "hostname":"192.168.1.1",
-        "port":80,
-        "username":"jzangari"
-    }
-))
-postRequest.end();
-
-
-
-
-
-
-

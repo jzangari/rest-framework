@@ -21,7 +21,10 @@ module.exports.getConfigurations = function (){
 };
 
 module.exports.updateConfiguration = function(id, configurationUpdates, notFound, badRequest){
-    var currentConfiguration = this.getConfiguration(id, notFound);
+    var currentConfiguration = configurations[id];
+    if (currentConfiguration == null || currentConfiguration == undefined) {
+        notFound();
+    }
     //Check to make sure the thing sent in actually is valid compared to the current version we have.
     for(var field in configurationUpdates){
         if(currentConfiguration[field] == undefined){

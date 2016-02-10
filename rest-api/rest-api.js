@@ -11,22 +11,28 @@ module.exports.filterChain = filterChain;
 
 //Parse the URL and use the resources to select a resource.
 module.exports.handleRequest = function handleRequest(httpRequest, httpResponse){
-    console.log('Handling ' + httpRequest.method + ' postRequest for ' + httpRequest.url );
-    //Run the filter chain. Very "java" way of doing it.
-    //TODO I think this would be better handled as "middleware"... It's a term that keeps coming up in googles.
-    filterChain.forEach(function(filter){
-        filter(httpRequest, httpResponse);
-    });
+    try {
+        console.log('Handling ' + httpRequest.method + ' postRequest for ' + httpRequest.url);
+        //Run the filter chain. Very "java" way of doing it.
+        //TODO I think this would be better handled as "middleware"... It's a term that keeps coming up in googles.
+        filterChain.forEach(function (filter) {
+            filter(httpRequest, httpResponse);
+        });
 
-    // Since most of the APIs I build tend to deal strictly with the media application/json, even in production,
-    // I am going to make an assumption and kick out anything that isn't json. Leaving undefined to make testing easier for now
-    var contentType = httpRequest.headers['content-type'];
-    if((httpRequest.method != 'GET') && (contentType != 'application/json') && (contentType != undefined)){
-        console.log('Unsupported media type from postRequest: ' + contentType);
-        httpResponse.writeHead(415, 'Resource only supports application/json');
-        httpResponse.end();
+        // Since most of the APIs I build tend to deal strictly with the media application/json, even in production,
+        // I am going to make an assumption and kick out anything that isn't json. Leaving undefined to make testing easier for now
+        var contentType = httpRequest.headers['content-type'];
+        if ((httpRequest.method != 'GET') && (contentType != 'application/json') && (contentType != undefined)) {
+            console.log('Unsupported media type from postRequest: ' + contentType);
+            httpResponse.writeHead(415, 'Resource only supports application/json');
+            httpResponse.end();
+        }
+        dispatch(httpRequest, httpResponse);
+    //Node likes to die at the slightest error. I don't want it to die at the slightest error.
+    } catch(err){
+        httpRequest.writeHead(500);
+        httpRequest.end("There was a Server Error while processing your request");
     }
-    dispatch(httpRequest, httpResponse);
 };
 
 
@@ -42,9 +48,6 @@ function dispatch(clientRequest, serverResponse){
        var service = new Service();
     }
 
-
-    //Depending on the http postRequest method, call the associated method type.
-    // TODO Switch this to the http method
     switch(clientRequest.method){
         case 'POST':
             if(typeof service.save === 'function'){
@@ -77,8 +80,6 @@ function dispatch(clientRequest, serverResponse){
             serverResponse.end('Not Supported: ' + method);
     }
 }
-
-//TODO Fix: POSTs & PUTs with no data won't hit the events, and since there is no data, the postRequest was bad.
 function readBodyEventHandling(clientRequest, serverResponse, httpMethod, service, urlTokens) {
     var body, methodCalled = false;
     clientRequest.on('data', function (data) {
