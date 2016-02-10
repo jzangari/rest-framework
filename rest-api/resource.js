@@ -7,8 +7,8 @@ module.exports = {
                     function(response){
                         sendSingleResponse(serverResponse, 200, clientRequest.headers['host'], service.resourceName, response)
                     },
-                    function(){
-                        responseBuilder.writeErrorResponse(serverResponse, new Error(404, 'Not Found: ' + id));
+                    function(error){
+                        responseBuilder.writeErrorResponse(serverResponse, error);
                     }
                 );
             } else {
@@ -22,8 +22,8 @@ module.exports = {
                 function(response){
                     sendSingleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, response)
                 },
-                function(){
-                    responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Bad request'));
+                function(error){
+                    responseBuilder.writeErrorResponse(serverResponse, error);
                 }
             );
     },

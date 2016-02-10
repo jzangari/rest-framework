@@ -1,3 +1,4 @@
+var Error = require('./error');
 var MongoClient = require('mongodb').MongoClient;
 var ObjectID = require('mongodb').ObjectID;
 var assert = require('assert');
@@ -22,8 +23,17 @@ var insertDocument = function(object, collectionName, db, successCallback, error
 };
 
 var findDocumentById = function(id, collectionName, db, successCallback, errorCallback) {
+    //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
+    var idSize = encodeURI(id).split(/%..|./).length - 1;
+    if(idSize < 12){
+        errorCallback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
+    }
     db.collection(collectionName).findOne({"_id":ObjectID(id)}, function(err, res){
-        buildAndSendSingleResponse(err, res, successCallback, errorCallback);
+        if(res == null || res == undefined){
+            errorCallback(new Error(404, 'Not Found: ' + id ));
+        } else {
+            buildAndSendSingleResponse(err, res, successCallback, errorCallback);
+        }
     });
 };
 
@@ -33,9 +43,13 @@ var getAllDocumentsInCollection = function(collectionName, db, successCallback, 
         cursor.toArray(function(err, responses){
             for(var current in responses){
                 checkError(err, errorCallback);
+                //Remove the MongoID from the document and create a response the Resource can map.
                 var id = responses[current]._id;
                 delete responses[current]['_id'];
-                items.push({"id":id,"body":responses[current]});
+                items.push({
+                    "id":id,
+                    "body":responses[current]
+                });
             }
             successCallback(items);
         });
@@ -45,6 +59,7 @@ var getAllDocumentsInCollection = function(collectionName, db, successCallback, 
 var callCollectionFunctionWithSingleInput = function(object, collectionName, successCallback, errorCallback, method){
     MongoClient.connect(url, function(err, db) {
         checkError(err, errorCallback);
+        //If there is no object passed in, call the method without it.
         if(object == null){
             method(collectionName ,db,
                 function(response) {
@@ -53,6 +68,7 @@ var callCollectionFunctionWithSingleInput = function(object, collectionName, suc
                 },
                 errorCallback
             );
+        //Otherwise, call it with the object as the first argument.
         } else {
             method(object, collectionName, db,
                 function (response) {
@@ -65,16 +81,20 @@ var callCollectionFunctionWithSingleInput = function(object, collectionName, suc
     });
 }
 
-var buildAndSendSingleResponse= function(err, response, successCallback, errorCallback){
+var buildAndSendSingleResponse = function(err, response, successCallback, errorCallback){
         checkError(err, errorCallback);
+        //Remove the MongoID from the document and create a response the Resource can map.
         var id = response._id;
         delete response['_id'];
-        successCallback({"id":id,"body":response});
+        successCallback({
+            "id":id,
+            "body":response
+        });
 }
 
 var checkError = function(err, callback){
     if(err){
-        callback(err);
+        callback(new Error(500, JSON.stringify(err)));
     }
 };
 
