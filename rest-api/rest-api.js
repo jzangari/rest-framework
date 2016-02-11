@@ -17,7 +17,7 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
         //Run the filter chain. Very "java" way of doing it.
         //TODO I think this would be better handled as "middleware"... It's a term that keeps coming up in googles.
         for(var current in filterChain){
-            var filter = filterChain[current]
+            var filter = filterChain[current];
             filter(httpRequest, httpResponse);
         }
 
