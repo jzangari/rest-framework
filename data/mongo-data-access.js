@@ -25,8 +25,8 @@ module.exports.delete = function(id, collectionName, successCallback, errorCallb
 };
 
 
-module.exports.find = function(object, collectionName, successCallback, errorCallback){
-    callCollectionFunction([object], collectionName, successCallback, errorCallback, findDocument);
+module.exports.find = function(queryPararms, sortField, collectionName, successCallback, errorCallback){
+    callCollectionFunction([queryPararms, sortField], collectionName, successCallback, errorCallback, findDocument);
 };
 
 
@@ -111,9 +111,13 @@ var deleteDocument = function(id, collectionName, db, successCallback, errorCall
 };
 
 
-var findDocument = function(searchParams, collectionName, db, successCallback, errorCallback) {
-    db.collection(collectionName).find(searchParams, function(err, cursor){
+var findDocument = function(queryParams, sortField, collectionName, db, successCallback, errorCallback) {
+    db.collection(collectionName).find(queryParams, function(err, cursor){
         var returnItems = []
+        if(sortField != undefined){
+            var sortOrder = [[sortField,1]] ;
+            cursor.sort(sortOrder);
+        }
         cursor.toArray(function(err, responses){
             //For each item delete the mongo and create a respone object to put into the return array.
             for(var current in responses){

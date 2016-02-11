@@ -26,6 +26,12 @@ function ConfigurationResource(){
     this.del = function(id, successCallback, errorCallback){
         mongoDataAccess.delete(id, this.resourceName, successCallback, errorCallback);
     };
+
+    this.find = function(queryParams, sortField, successCallback, errorCallback){
+        mongoDataAccess.find(queryParams, sortField, this.resourceName, successCallback, errorCallback);
+    };
+
+
 }
 
 ConfigurationResource.resourceName = 'configurations'

@@ -1,4 +1,5 @@
 var resourceMethods = require('./resource');
+var url = require('url');
 
 var resources = {};
 module.exports.addResource = function addResource(resourceName, endpoints){
@@ -40,9 +41,20 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
 
 function dispatch(clientRequest, serverResponse){
     //Look Up Resource by the first URL token, error if not found.
-    var urlTokens = clientRequest.url.trim().split('/');
+    //Trim the Url, strip off a query param if one exists, and split on /
+    var path = '';
+    if(clientRequest.url.indexOf('?') > -1){
+        path = clientRequest.url;
+        path.trim();
+        path  = path.split('?')[0];
+    } else {
+        path = clientRequest.url.trim();
+    }
+    if(path == undefined){
+        path = '/'
+    }
+    var urlTokens = path.split('/');
     var Service = resources[urlTokens[1].toLowerCase()];
-
     if(Service == undefined){
         serverResponse.writeHead(404);
         serverResponse.end('Not Found: ' + serverResponse.url);
@@ -69,7 +81,8 @@ function dispatch(clientRequest, serverResponse){
             break;
         case 'GET':
             if(typeof service.getById === 'function' && typeof service.getAll === 'function') {
-                resourceMethods.GET(clientRequest, serverResponse, urlTokens[2], service);
+                var queryParams = url.parse(clientRequest.url, true).query;
+                resourceMethods.GET(clientRequest, serverResponse, urlTokens[2], queryParams,  service);
             }
             break;
         case 'DELETE':

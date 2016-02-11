@@ -1,7 +1,7 @@
 var responseBuilder = require('./response-builder');
 var Error = require('./error');
 module.exports = {
-    'GET' : function get(clientRequest, serverResponse, id, service){
+    'GET' : function get(clientRequest, serverResponse, id, queryParams, service){
             if(id != undefined && id != ''){
                 service.getById(id,
                     function(response){
@@ -12,7 +12,14 @@ module.exports = {
                     }
                 );
             } else {
-                getAllAndBuildResponse(serverResponse, clientRequest.headers['host'], service);
+                var sortField = undefined;
+                if(queryParams.sort != undefined){
+                    sortField = queryParams.sort;
+                    delete queryParams['sort'];
+                }
+
+
+                getAllAndBuildResponse(serverResponse, clientRequest.headers['host'], service, queryParams, sortField);
             }
     },
 
@@ -57,9 +64,9 @@ module.exports = {
     },
 };
 
-function getAllAndBuildResponse(serverResponse, host, service) {
+function getAllAndBuildResponse(serverResponse, host, service, queryParms, sortField) {
     var items = []
-    service.getAll(
+    service.find(queryParms, sortField,
         function(responses){
             for(var current in responses){
                 var response = responses[current];
