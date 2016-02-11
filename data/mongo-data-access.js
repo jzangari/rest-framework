@@ -1,4 +1,4 @@
-var Error = require('./error');
+var Error = require('./../rest-api/error');
 var MongoClient = require('mongodb').MongoClient;
 var ObjectID = require('mongodb').ObjectID;
 var assert = require('assert');
@@ -22,6 +22,11 @@ module.exports.update = function(id, object, collectionName, successCallback, er
 
 module.exports.delete = function(id, collectionName, successCallback, errorCallback){
     callCollectionFunction([id], collectionName, successCallback, errorCallback, deleteDocument);
+};
+
+
+module.exports.find = function(object, collectionName, successCallback, errorCallback){
+    callCollectionFunction([object], collectionName, successCallback, errorCallback, findDocument);
 };
 
 
@@ -54,7 +59,7 @@ var getAllDocumentsInCollection = function(collectionName, db, successCallback, 
             for(var current in responses){
                 checkError(err, errorCallback);
                 //Remove the MongoID from the document and create a response the Resource can map.
-                var id = responses[current]._id;
+                var id = new responses[current]._id;
                 delete responses[current]['_id'];
                 returnItems.push({
                     "id":id,
@@ -69,6 +74,11 @@ var getAllDocumentsInCollection = function(collectionName, db, successCallback, 
 var updateDocument = function(id, object, collectionName, db, successCallback, errorCallback) {
     //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
     var idSize = encodeURI(id).split(/%..|./).length - 1;
+    try{
+        var objectID = new ObjectID(id)
+    } catch (err){
+        console.log(err);
+    }
     if(idSize < 12){
         errorCallback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
     }
@@ -76,7 +86,7 @@ var updateDocument = function(id, object, collectionName, db, successCallback, e
     var updates = {
         "$set":object
     };
-    db.collection(collectionName).updateOne({"_id":ObjectID(id)}, updates, function(err, res){
+    db.collection(collectionName).updateOne({"_id":objectID}, updates, function(err, res){
         if(res.modifiedCount == 1){
            successCallback();
         } else {
@@ -100,6 +110,26 @@ var deleteDocument = function(id, collectionName, db, successCallback, errorCall
     });
 };
 
+
+var findDocument = function(searchParams, collectionName, db, successCallback, errorCallback) {
+    db.collection(collectionName).find(searchParams, function(err, cursor){
+        var returnItems = []
+        cursor.toArray(function(err, responses){
+            //For each item delete the mongo and create a respone object to put into the return array.
+            for(var current in responses){
+                checkError(err, errorCallback);
+                //Remove the MongoID from the document and create a response the Resource can map.\
+                var id = responses[current]._id;
+                delete responses[current]['_id'];
+                returnItems.push({
+                    "id":id,
+                    "body":responses[current]
+                });
+            }
+            successCallback(returnItems);
+        });
+    });
+};
 
 var callCollectionFunction = function(input, collectionName, successCallback, errorCallback, method){
     MongoClient.connect(url, function(err, db) {
@@ -137,7 +167,7 @@ var callCollectionFunction = function(input, collectionName, successCallback, er
 var buildAndSendSingleResponse = function(err, response, successCallback, errorCallback){
         checkError(err, errorCallback);
         //Remove the MongoID from the document and create a response the Resource can map.
-        var id = response._id;
+        var id = new response._id;
         delete response['_id'];
         successCallback({
             "id":id,
