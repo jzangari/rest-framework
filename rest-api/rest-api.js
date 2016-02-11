@@ -15,9 +15,10 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
         console.log('Handling ' + httpRequest.method + ' postRequest for ' + httpRequest.url);
         //Run the filter chain. Very "java" way of doing it.
         //TODO I think this would be better handled as "middleware"... It's a term that keeps coming up in googles.
-        filterChain.forEach(function (filter) {
+        for(var current in filterChain){
+            var filter = filterChain[current]
             filter(httpRequest, httpResponse);
-        });
+        }
 
         // Since most of the APIs I build tend to deal strictly with the media application/json, even in production,
         // I am going to make an assumption and kick out anything that isn't json. Leaving undefined to make testing easier for now
