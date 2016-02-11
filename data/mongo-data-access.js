@@ -25,8 +25,8 @@ module.exports.delete = function(id, collectionName, successCallback, errorCallb
 };
 
 
-module.exports.find = function(queryPararms, sortField, collectionName, successCallback, errorCallback){
-    callCollectionFunction([queryPararms, sortField], collectionName, successCallback, errorCallback, findDocument);
+module.exports.find = function(queryPararms, sortField, paginationData, collectionName, successCallback, errorCallback){
+    callCollectionFunction([queryPararms, sortField, paginationData], collectionName, successCallback, errorCallback, findDocument);
 };
 
 
@@ -111,15 +111,19 @@ var deleteDocument = function(id, collectionName, db, successCallback, errorCall
 };
 
 
-var findDocument = function(queryParams, sortField, collectionName, db, successCallback, errorCallback) {
+var findDocument = function(queryParams, sortField, paginationData, collectionName, db, successCallback, errorCallback) {
     db.collection(collectionName).find(queryParams, function(err, cursor){
         var returnItems = []
         if(sortField != undefined){
             var sortOrder = [[sortField,1]] ;
             cursor.sort(sortOrder);
         }
+        if(paginationData != undefined) {
+            cursor.skip(paginationData.pageNumber * paginationData.pageSize);
+            cursor.limit(paginationData.pageSize);
+        }
         cursor.toArray(function(err, responses){
-            //For each item delete the mongo and create a respone object to put into the return array.
+            //For each item delete the mongo and create a response object to put into the return array.
             for(var current in responses){
                 checkError(err, errorCallback);
                 //Remove the MongoID from the document and create a response the Resource can map.\
@@ -158,6 +162,14 @@ var callCollectionFunction = function(input, collectionName, successCallback, er
             );
         } else if(input.length == 2) {
             method(input[0], input[1], collectionName, db,
+                function (response) {
+                    db.close();
+                    successCallback(response);
+                },
+                errorCallback
+            );
+        } else if(input.length == 3) {
+            method(input[0], input[1], input[2], collectionName, db,
                 function (response) {
                     db.close();
                     successCallback(response);

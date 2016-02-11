@@ -12,14 +12,28 @@ module.exports = {
                     }
                 );
             } else {
+
                 var sortField = undefined;
                 if(queryParams.sort != undefined){
                     sortField = queryParams.sort;
                     delete queryParams['sort'];
                 }
 
+                var paginationData = {};
+                if(queryParams.pageNumber != undefined){
+                    paginationData.pageNumber =  parseInt(queryParams.pageNumber);
+                    delete queryParams['pageNumber'];
+                } else {
+                    paginationData.pageNumber =  1;
+                }
+                if(queryParams.pageSize != undefined){
+                    paginationData.pageSize =  parseInt(queryParams.pageSize);
+                    delete queryParams['pageSize'];
+                } else {
+                    paginationData.pageSize = 10;
+                }
 
-                getAllAndBuildResponse(serverResponse, clientRequest.headers['host'], service, queryParams, sortField);
+                getAllAndBuildResponse(serverResponse, clientRequest.headers['host'], service, queryParams, sortField, paginationData);
             }
     },
 
@@ -64,10 +78,11 @@ module.exports = {
     },
 };
 
-function getAllAndBuildResponse(serverResponse, host, service, queryParms, sortField) {
+function getAllAndBuildResponse(serverResponse, host, service, queryParms, sortField, paginationData) {
     var items = []
-    service.find(queryParms, sortField,
+    service.find(queryParms, sortField, paginationData,
         function(responses){
+            console.log('In Response Building Callback');
             for(var current in responses){
                 var response = responses[current];
                 responseBuilder.addLocation(host, service.resourceName, response.id, response.body);
