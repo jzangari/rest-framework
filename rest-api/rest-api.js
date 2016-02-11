@@ -13,7 +13,7 @@ module.exports.filterChain = filterChain;
 //Parse the URL and use the resources to select a resource.
 module.exports.handleRequest = function handleRequest(httpRequest, httpResponse){
     try {
-        console.log('Handling ' + httpRequest.method + ' postRequest for ' + httpRequest.url);
+        console.log('Handling ' + httpRequest.method + ' Request for ' + httpRequest.url);
         //Run the filter chain. Very "java" way of doing it.
         //TODO I think this would be better handled as "middleware"... It's a term that keeps coming up in googles.
         for(var current in filterChain){
@@ -24,6 +24,7 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
         // Since most of the APIs I build tend to deal strictly with the media application/json, even in production,
         // I am going to make an assumption and kick out anything that isn't json. Leaving undefined to make testing easier for now
         var contentType = httpRequest.headers['content-type'];
+        console.log('Request has content type: ' + contentType);
         if ((httpRequest.method != 'GET') && (contentType != 'application/json') && (contentType != undefined)) {
             console.log('Unsupported media type from postRequest: ' + contentType);
             httpResponse.writeHead(415, 'Resource only supports application/json');
@@ -41,7 +42,8 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
 
 function dispatch(clientRequest, serverResponse){
     //Look Up Resource by the first URL token, error if not found.
-    //Trim the Url, strip off a query param if one exists, and split on /
+    console.log('Dispatching request to mapped service/resource based on http method');
+    //If there is a '?', split the path on it to find the resource.
     var path = '';
     if(clientRequest.url.indexOf('?') > -1){
         path = clientRequest.url;
@@ -50,18 +52,22 @@ function dispatch(clientRequest, serverResponse){
     } else {
         path = clientRequest.url.trim();
     }
+    //catch all
     if(path == undefined){
         path = '/'
     }
+    //Split the path on '/' and grab the lowercase version of the first thing past the initial '/', the Resource.
     var urlTokens = path.split('/');
-    var Service = resources[urlTokens[1].toLowerCase()];
-    if(Service == undefined){
+    var Resource = resources[urlTokens[1].toLowerCase()];
+    //Instantiate a new resource.
+    if(Resource == undefined){
         serverResponse.writeHead(404);
         serverResponse.end('Not Found: ' + serverResponse.url);
     } else {
-       var service = new Service();
+       var service = new Resource();
     }
 
+    //Switch on the method and call the service
     switch(clientRequest.method){
         case 'POST':
             if(typeof service.save === 'function'){
@@ -95,6 +101,8 @@ function dispatch(clientRequest, serverResponse){
             serverResponse.end('Not Supported: ' + method);
     }
 }
+
+//This function sets up the event handling to read the body of the request, then calls the httpMethod.
 function readBodyEventHandling(clientRequest, serverResponse, httpMethod, service, urlTokens) {
     var body, methodCalled = false;
     clientRequest.on('data', function (data) {

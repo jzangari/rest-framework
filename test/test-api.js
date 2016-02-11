@@ -99,8 +99,14 @@ describe('Test Configurations Resource',function(){
                                 endpoint
                                     .delete('/configurations/' + id)
                                     .expect('Content-type', /json/)
-                                    .expect(404);
-                                done();
+                                    .expect(204)
+                                    .then(function(res){
+                                        endpoint
+                                            .get('/configurations/' + id)
+                                            .expect('Content-type', /json/)
+                                            .expect(404);
+                                        done();
+                                    });
                             });
                 });
     });

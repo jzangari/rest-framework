@@ -2,7 +2,9 @@ var responseBuilder = require('./response-builder');
 var Error = require('./error');
 module.exports = {
     'GET' : function get(clientRequest, serverResponse, id, queryParams, service){
+            //Check and see if this get has an ID associated with it.
             if(id != undefined && id != ''){
+                console.log('GET method on resource: ' + service.resourceName + ' with id: ' + id);
                 service.getById(id,
                     function(response){
                         sendSingleResponse(serverResponse, 200, clientRequest.headers['host'], service.resourceName, response)
@@ -11,14 +13,17 @@ module.exports = {
                         responseBuilder.writeErrorResponse(serverResponse, error);
                     }
                 );
+            //No ID means it is against a collection
             } else {
-
+                console.log('GET method called on resource: ' + service.resourceName + ' without id');
+                //Set up sort field from query param.
                 var sortField = undefined;
                 if(queryParams.sort != undefined){
                     sortField = queryParams.sort;
                     delete queryParams['sort'];
                 }
 
+                //Set up pagination data from query params.
                 var paginationData = {};
                 if(queryParams.pageNumber != undefined){
                     paginationData.pageNumber =  parseInt(queryParams.pageNumber);
@@ -32,29 +37,40 @@ module.exports = {
                 } else {
                     paginationData.pageSize = 10;
                 }
-
-                getAllAndBuildResponse(serverResponse, clientRequest.headers['host'], service, queryParams, sortField, paginationData);
+                console.log('Query data setup as:\n' +  queryParams + '\n' + sortField + '\n' + paginationData);
+                //Calls the service and builds a response.
+                getAndBuildResponse(serverResponse, clientRequest.headers['host'], service, queryParams, sortField, paginationData);
             }
     },
 
     'POST' : function post(clientRequest, serverResponse, body, service){
+        console.log('POST method on resource: ' + service.resourceName);
+        try {
             var bodyObject = JSON.parse(body);
-            service.save(bodyObject,
-                function(response){
-                    sendSingleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, response)
-                },
-                function(error){
-                    responseBuilder.writeErrorResponse(serverResponse, error);
-                }
-            );
+        } catch(err){
+            responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Invalid JSON sent.\n' + err));
+        }
+        service.save(bodyObject,
+            function(response){
+                sendSingleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, response)
+            },
+            function(error){
+                responseBuilder.writeErrorResponse(serverResponse, error);
+            }
+        );
     },
 
     'PUT' : function put(clientRequest, serverResponse, body, id, service){
-        var configuration = JSON.parse(body);
+        console.log('PUT method on resource: ' + service.resourceName + ' with id: ' + id);
         if(id == ''){
             responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Cannot update a collection root.'));
         } else {
-            service.update(id, configuration,
+            try {
+                var bodyObject = JSON.parse(body);
+            } catch(err){
+                responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Invalid JSON sent.\n' + err));
+            }
+            service.update(id, bodyObject,
                 function () {sendEmptyResponse(serverResponse);},
                 function (error) {
                     responseBuilder.writeErrorResponse(serverResponse, error);
@@ -63,6 +79,7 @@ module.exports = {
     },
 
     'DELETE' : function del(clientRequest, serverResponse, id, service){
+        console.log('DELETE method on resource: ' + service.resourceName + ' with id: ' + id);
         if(id != undefined){
             service.del(id,
                 function(){
@@ -78,11 +95,11 @@ module.exports = {
     },
 };
 
-function getAllAndBuildResponse(serverResponse, host, service, queryParms, sortField, paginationData) {
+function getAndBuildResponse(serverResponse, host, service, queryParms, sortField, paginationData) {
     var items = []
     service.find(queryParms, sortField, paginationData,
         function(responses){
-            console.log('In Response Building Callback');
+            console.log('Building multipple responses from query.');
             for(var current in responses){
                 var response = responses[current];
                 responseBuilder.addLocation(host, service.resourceName, response.id, response.body);

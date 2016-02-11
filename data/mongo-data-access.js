@@ -2,7 +2,7 @@ var Error = require('./../rest-api/error');
 var MongoClient = require('mongodb').MongoClient;
 var ObjectID = require('mongodb').ObjectID;
 var assert = require('assert');
-var url = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/jzangari-tenable'
+var url = process.env.MONGOLAB_URI || 'mongodb://heroku_3zwpv2ck:a5umnu2vcjlr4a9dd0ke088e6d@ds061335.mongolab.com:61335/heroku_3zwpv2ck'
 
 module.exports.save = function(object, collectionName, successCallback, errorCallback){
     callCollectionFunction([object], collectionName, successCallback, errorCallback, insertDocument);
