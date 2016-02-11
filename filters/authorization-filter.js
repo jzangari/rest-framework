@@ -1,14 +1,26 @@
-module.exports.filter = function filter(httpRequest, httpResponse) {
-    if (httpRequest.url.toLowerCase() == '/authenticate') {
+var authenticationService = require('../services/authentication-service');
+var responseBuilder = require('../rest-api/response-builder');
+var Error = require('../rest-api/error');
+
+module.exports.filter = function filter(clientRequest, serverResponse) {
+    if (clientRequest.url.toLowerCase() == '/login' && clientRequest.method == 'POST') {
         console.log('Authentication Request');
         return;
     } else {
-        var token = httpRequest.headers['auth-token'];
+        var token = clientRequest.headers['authorization'];
         if(token != undefined){
-            console.log('Authorizing postRequest to: ' + httpRequest.url + ' having token: ' + token);
-            //TODO Validate token with database.
+            authenticationService.authorizeToken(token,function(authorized){
+                if(!authorized){
+                    console.log('Authorization failed for: ' + token);
+                    responseBuilder.writeErrorResponse(serverResponse, new Error(401, "Unauthorized"));
+                } else {
+                    return;
+                }
+            });
+
         } else {
-            //TODO Return unauthorized response.
+            console.log('Request unauthorized');
+            responseBuilder.writeErrorResponse(serverResponse, new Error(401, "Unauthorized"));
         }
     }
 };

@@ -46,15 +46,15 @@ module.exports.invalidateAuthorization = function(token, successCallback, errorC
     }, errorCallback);
 }
 
-module.exports.authorizeToken = function(token){
-    mongoDataAccess.find({"token":token,"valid":true}, 'users', function(tokens){
+module.exports.authorizeToken = function(token, authorized){
+    mongoDataAccess.find({"token":token,"valid":true}, 'authorizationTokens', function(tokens){
         if(tokens.length == 1){
-            return true;
+            authorized(true);
         } else {
             console.log('Authorization Token Collision! Invalidating all of them.');
             invalidateTokens(tokens, function(error){
                 console.log(error);
-                return false;
+                authorized(false);
             });
         }
     }, function(err){

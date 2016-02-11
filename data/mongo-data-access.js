@@ -59,7 +59,7 @@ var getAllDocumentsInCollection = function(collectionName, db, successCallback, 
             for(var current in responses){
                 checkError(err, errorCallback);
                 //Remove the MongoID from the document and create a response the Resource can map.
-                var id = new responses[current]._id;
+                var id =  responses[current]._id;
                 delete responses[current]['_id'];
                 returnItems.push({
                     "id":id,
@@ -167,7 +167,7 @@ var callCollectionFunction = function(input, collectionName, successCallback, er
 var buildAndSendSingleResponse = function(err, response, successCallback, errorCallback){
         checkError(err, errorCallback);
         //Remove the MongoID from the document and create a response the Resource can map.
-        var id = new response._id;
+        var id = response._id;
         delete response['_id'];
         successCallback({
             "id":id,
