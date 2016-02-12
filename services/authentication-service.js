@@ -8,7 +8,8 @@ var mongoDataAccess = require('../data/mongo-data-access');
 module.exports.authenticate = function(loginAttempt, successCallback, failureCallback){
     console.log('Login Attempt for: ' + loginAttempt.username)
     //Just quick and dirty password checking for now. Find a match!
-    mongoDataAccess.find(loginAttempt, undefined, undefined, 'users', function(users){
+    mongoDataAccess.find({"$and":[{"username":{"$eq":loginAttempt.username}},{"password":{"$eq":loginAttempt.password}}]}
+        , undefined, undefined, 'users', function(users){
         //If we find one user, create ans save a token for the user.
         if(users.length == 1){
             console.log('Authorization Token created for: ' + loginAttempt.username);
@@ -47,7 +48,7 @@ module.exports.invalidateAuthorization = function(token, successCallback, errorC
 }
 
 module.exports.authorizeToken = function(token, authorized){
-    mongoDataAccess.find({"token":token,"valid":true}, undefined, undefined, 'authorizationTokens', function(tokens){
+    mongoDataAccess.find({"$and":[{"token":{"$eq":token}},{"valid":{"$eq":true}}]}, undefined, undefined, 'authorizationTokens', function(tokens){
         if(tokens.length == 1){
             authorized(true);
         } else {
