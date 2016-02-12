@@ -2,7 +2,7 @@ var authenticationService = require('../services/authentication-service');
 var responseBuilder = require('../rest-api/response-builder');
 var Error = require('../rest-api/error');
 
-module.exports.filter = function filter(clientRequest, serverResponse) {
+module.exports.filter = function filter(clientRequest, serverResponse, next) {
     if (clientRequest.url.toLowerCase() == '/login' && clientRequest.method == 'POST') {
         console.log('Authentication Request');
         return;
@@ -14,7 +14,7 @@ module.exports.filter = function filter(clientRequest, serverResponse) {
                     console.log('Authorization failed for: ' + token);
                     responseBuilder.writeErrorResponse(serverResponse, new Error(401, "Unauthorized"));
                 } else {
-                    return;
+                    return next();
                 }
             });
 

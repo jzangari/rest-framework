@@ -37,8 +37,8 @@ module.exports = {
                 } else {
                     paginationData.pageSize = 10;
                 }
-                console.log('Query data setup as:\n' +  queryParams + '\n' + sortField + '\n' + paginationData);
-                //Calls the service and builds a response.
+                console.log('Query data setup as:\n' +  JSON.stringify(queryParams) + '\n' + sortField + '\n' + JSON.stringify(paginationData));
+
                 getAndBuildResponse(serverResponse, clientRequest.headers['host'], service, queryParams, sortField, paginationData);
             }
     },
@@ -97,9 +97,9 @@ module.exports = {
 
 function getAndBuildResponse(serverResponse, host, service, queryParms, sortField, paginationData) {
     var items = []
-    service.find(queryParms, sortField, paginationData,
+    service.find({}, sortField, paginationData,
         function(responses){
-            console.log('Building multipple responses from query.');
+            console.log('Building multiple responses from query.');
             for(var current in responses){
                 var response = responses[current];
                 responseBuilder.addLocation(host, service.resourceName, response.id, response.body);

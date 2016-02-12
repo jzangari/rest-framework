@@ -11,7 +11,7 @@ var portNumber = Number(process.env.PORT || 8080);
 restAPI.addResource(configResource.resourceName, configResource);
 restAPI.addResource(loginResource.resourceName, loginResource);
 restAPI.addResource(logoutResource.resourceName, logoutResource);
-restAPI.filterChain.push(require('./filters/authorization-filter').filter);
+restAPI.filterChain[0] = (require('./filters/authorization-filter').filter);
 
 //Start the server.
 server.initialize(restAPI.handleRequest)

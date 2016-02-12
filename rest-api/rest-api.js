@@ -1,4 +1,5 @@
 var resourceMethods = require('./resource');
+var async = require('async');
 var url = require('url');
 
 var resources = {};
@@ -14,23 +15,18 @@ module.exports.filterChain = filterChain;
 module.exports.handleRequest = function handleRequest(httpRequest, httpResponse){
     try {
         console.log('Handling ' + httpRequest.method + ' Request for ' + httpRequest.url);
-        //Run the filter chain. Very "java" way of doing it.
-        //TODO I think this would be better handled as "middleware"... It's a term that keeps coming up in googles.
-        for(var current in filterChain){
-            var filter = filterChain[current];
-            filter(httpRequest, httpResponse);
-        }
 
         // Since most of the APIs I build tend to deal strictly with the media application/json, even in production,
         // I am going to make an assumption and kick out anything that isn't json. Leaving undefined to make testing easier for now
         var contentType = httpRequest.headers['content-type'];
         console.log('Request has content type: ' + contentType);
-        if ((httpRequest.method != 'GET') && (contentType != 'application/json') && (contentType != undefined)) {
+        if ((httpRequest.method != 'GET') && (httpRequest.method != 'DELETE') && (contentType != 'application/json') && (contentType != undefined)) {
             console.log('Unsupported media type from postRequest: ' + contentType);
             httpResponse.writeHead(415, 'Resource only supports application/json');
             httpResponse.end();
         }
-        dispatch(httpRequest, httpResponse);
+
+        runFilterChainAndDispatch(httpRequest, httpResponse);
     //Node likes to die at the slightest error. I don't want it to die at the slightest error.
     } catch(err){
         console.log(err.stack);
@@ -39,6 +35,21 @@ module.exports.handleRequest = function handleRequest(httpRequest, httpResponse)
     }
 };
 
+var runFilterChainAndDispatch = function(httpRequest, httpResponse){
+    if(filterChain[filterChain.length-1] != dispatch){
+        filterChain[filterChain.length] = dispatch
+    }
+    var chainCopy = filterChain.slice();
+    function next() {
+        var middleware = chainCopy.shift();
+        if (middleware && typeof middleware === 'function') {
+            middleware.call(this, httpRequest, httpResponse, next);
+        }
+        return this;
+    }
+    // Start the chain.
+    return next();
+}
 
 function dispatch(clientRequest, serverResponse){
     //Look Up Resource by the first URL token, error if not found.

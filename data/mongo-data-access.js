@@ -2,7 +2,7 @@ var Error = require('./../rest-api/error');
 var MongoClient = require('mongodb').MongoClient;
 var ObjectID = require('mongodb').ObjectID;
 var assert = require('assert');
-var url = process.env.MONGOLAB_URI || 'mongodb://heroku_3zwpv2ck:a5umnu2vcjlr4a9dd0ke088e6d@ds061335.mongolab.com:61335/heroku_3zwpv2ck'
+var url = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/test'
 
 module.exports.save = function(object, collectionName, successCallback, errorCallback){
     callCollectionFunction([object], collectionName, successCallback, errorCallback, insertDocument);
@@ -37,12 +37,13 @@ var insertDocument = function(object, collectionName, db, successCallback, error
 };
 
 var findDocumentById = function(id, collectionName, db, successCallback, errorCallback) {
-    //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
-    var idSize = encodeURI(id).split(/%..|./).length - 1;
-    if(idSize < 12){
-        errorCallback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
+     try {
+        var objectId = ObjectID(id);
+    } catch (err){
+        console.log(err);
+        errorCallback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
     }
-    db.collection(collectionName).findOne({"_id":ObjectID(id)}, function(err, res){
+    db.collection(collectionName).findOne({"_id":objectId}, function(err, res){
         if(res == null || res == undefined){
             errorCallback(new Error(404, 'Not Found: ' + id ));
         } else {
@@ -72,21 +73,17 @@ var getAllDocumentsInCollection = function(collectionName, db, successCallback, 
 }
 
 var updateDocument = function(id, object, collectionName, db, successCallback, errorCallback) {
-    //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
-    var idSize = encodeURI(id).split(/%..|./).length - 1;
-    try{
-        var objectID = new ObjectID(id)
+    try {
+        var objectId = ObjectID(id);
     } catch (err){
         console.log(err);
-    }
-    if(idSize < 12){
-        errorCallback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
+        errorCallback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
     }
     //Set up updates object that mongo uses.
     var updates = {
         "$set":object
     };
-    db.collection(collectionName).updateOne({"_id":objectID}, updates, function(err, res){
+    db.collection(collectionName).updateOne({"_id":objectId}, updates, function(err, res){
         if(res.modifiedCount == 1){
            successCallback();
         } else {
@@ -119,7 +116,9 @@ var findDocument = function(queryParams, sortField, paginationData, collectionNa
             cursor.sort(sortOrder);
         }
         if(paginationData != undefined) {
-            cursor.skip(paginationData.pageNumber * paginationData.pageSize);
+            if(paginationData.pageNumber > 1) {
+                cursor.skip(paginationData.pageNumber * paginationData.pageSize);
+            }
             cursor.limit(paginationData.pageSize);
         }
         cursor.toArray(function(err, responses){
