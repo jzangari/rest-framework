@@ -1,5 +1,4 @@
 var resourceMethods = require('./resource');
-var async = require('async');
 var url = require('url');
 
 var resources = {};
