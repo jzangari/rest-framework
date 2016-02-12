@@ -3,20 +3,23 @@ var mongoDataAccess = require('../data/mongo-data-access');
 
 var i =0;
 console.log(i);
-setInterval(function(){
-    console.log('Cleaning up expired tokens...');
-    mongoDataAccess.find({"$and":[{"valid":{"$eq":true}}, {"expires":{"$lte":new Date().toISOString()}}]},
-        undefined, undefined, 'authorizationTokens',
-        function(tokens){ //success
-            console.log(tokens.length + ' expired tokens found.')
-            if(tokens.length >= 1) invalidateTokens(tokens);
+if(false) {
+    setInterval(function () {
+            console.log('Cleaning up expired tokens...');
+            mongoDataAccess.find({"$and": [{"valid": {"$eq": true}}, {"expires": {"$lte": new Date().toISOString()}}]},
+                undefined, undefined, 'authorizationTokens',
+                function (tokens) { //success
+                    console.log(tokens.length + ' expired tokens found.')
+                    if (tokens.length >= 1) invalidateTokens(tokens);
+                },
+                function (err) { //error
+                    console.log(JSON.stringify(err));
+                }
+            );
         },
-        function(err){ //error
-            console.log(JSON.stringify(err));
-        }
-    );},
-    30000 //30 second interval
-);
+        30000 //30 second interval
+    );
+}
 
 // loginAttempt & user = { "username":"<username>", "password":"<password>" }
 module.exports.authenticate = function(loginAttempt, successCallback, failureCallback){
