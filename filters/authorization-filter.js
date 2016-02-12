@@ -3,10 +3,14 @@ var responseBuilder = require('../rest-api/response-builder');
 var Error = require('../rest-api/error');
 
 module.exports.filter = function filter(clientRequest, serverResponse, next) {
+    var url = clientRequest.url.toLowerCase();
     if (clientRequest.url.toLowerCase() == '/login' && clientRequest.method == 'POST') {
-        console.log('Authentication Request');
-        return;
-    } else {
+        console.log('Login Request');
+        return next();
+    } else if(url.indexOf('/logout') === 0 && clientRequest.method == 'PUT'){
+        console.log('Logout Request');
+        return next();
+    }else {
         var token = clientRequest.headers['authorization'];
         if(token != undefined){
             authenticationService.authorizeToken(token,function(authorized){
