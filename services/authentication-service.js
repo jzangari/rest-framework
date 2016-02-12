@@ -1,8 +1,22 @@
-var authorizationTokens = {}
-var tokenIndex = {}
-
 var Error = require('../rest-api/error');
 var mongoDataAccess = require('../data/mongo-data-access');
+
+var i =0;
+console.log(i);
+setInterval(function(){
+    console.log('Cleaning up expired tokens...');
+    mongoDataAccess.find({"$and":[{"valid":{"$eq":true}}, {"expires":{"$lte":new Date().toISOString()}}]},
+        undefined, undefined, 'authorizationTokens',
+        function(tokens){ //success
+            console.log(tokens.length + ' expired tokens found.')
+            if(tokens.length >= 1) invalidateTokens(tokens);
+        },
+        function(err){ //error
+            console.log(JSON.stringify(err));
+        }
+    );},
+    30000 //30 second interval
+);
 
 // loginAttempt & user = { "username":"<username>", "password":"<password>" }
 module.exports.authenticate = function(loginAttempt, successCallback, failureCallback){
@@ -15,7 +29,7 @@ module.exports.authenticate = function(loginAttempt, successCallback, failureCal
             console.log('Authorization Token created for: ' + loginAttempt.username);
             var token = {
                 "token":generateToken(),
-                "expires":new Date(new Date().getTime() + 30000), //5 minutes
+                "expires":new Date(new Date().getTime() + 300000).toISOString(), //5 minutes
                 "valid":true,
                 "user":users[0].body.username
             };
@@ -66,13 +80,14 @@ module.exports.authorizeToken = function(token, authorized){
 
 var invalidateTokens = function(tokens, failureCallback){
     for(var current in tokens){
-        mongoDataAccess.update(tokens[current]._id, {"valid":false}, 'authorizationTokens',
-            function(){console.error('Token invalidated: +' + tokens[current])},
+        mongoDataAccess.update(tokens[current].id, {"valid":false}, 'authorizationTokens',
+            function(){console.error('Token invalidated: +' + JSON.stringify(tokens[current]))},
             function(err){
-                console.error('Error while invalidating token:\n' + err);
+                console.error('Error while invalidating token:\n' + JSON.stringify(err) + '\n' + JSON.stringify(tokens));
             });
     }
-    failureCallback(new Error(500, 'Multiple Token Instances Found. All of them have been De-authorized as a security measure.'));
+    if(failureCallback) failureCallback(new Error(500,
+        'Multiple Token Instances Found. All of them have been De-authorized as a security measure.'));
 }
 
 
@@ -87,3 +102,4 @@ function generateToken(){
     });
     return uuid;
 }
+

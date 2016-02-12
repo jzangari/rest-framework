@@ -5,28 +5,28 @@ var assert = require('assert');
 var url = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/test'
 
 module.exports.save = function(object, collectionName, successCallback, errorCallback){
-    callCollectionFunction([object], collectionName, successCallback, errorCallback, insertDocument);
+    callHandlerFunction([object], collectionName, successCallback, errorCallback, insertDocument);
 };
 
 module.exports.getById = function(id, collectionName, successCallback, errorCallback){
-    callCollectionFunction([id], collectionName, successCallback, errorCallback, findDocumentById);
+    callHandlerFunction([id], collectionName, successCallback, errorCallback, findDocumentById);
 };
 
 module.exports.getAll = function(collectionName, successCallback, errorCallback){
-    callCollectionFunction([], collectionName, successCallback, errorCallback, getAllDocumentsInCollection);
+    callHandlerFunction([], collectionName, successCallback, errorCallback, getAllDocumentsInCollection);
 };
 
 module.exports.update = function(id, object, collectionName, successCallback, errorCallback){
-    callCollectionFunction([id, object], collectionName, successCallback, errorCallback, updateDocument);
+    callHandlerFunction([id, object], collectionName, successCallback, errorCallback, updateDocument);
 };
 
 module.exports.delete = function(id, collectionName, successCallback, errorCallback){
-    callCollectionFunction([id], collectionName, successCallback, errorCallback, deleteDocument);
+    callHandlerFunction([id], collectionName, successCallback, errorCallback, deleteDocument);
 };
 
 
 module.exports.find = function(queryPararms, sortField, paginationData, collectionName, successCallback, errorCallback){
-    callCollectionFunction([queryPararms, sortField, paginationData], collectionName, successCallback, errorCallback, findDocument);
+    callHandlerFunction([queryPararms, sortField, paginationData], collectionName, successCallback, errorCallback, findDocument);
 };
 
 
@@ -138,7 +138,7 @@ var findDocument = function(queryParams, sortField, paginationData, collectionNa
     });
 };
 
-var callCollectionFunction = function(input, collectionName, successCallback, errorCallback, method){
+var callHandlerFunction = function(input, collectionName, successCallback, errorCallback, method){
     MongoClient.connect(url, function(err, db) {
         checkError(err, errorCallback);
         //If there is no object passed in, call the method without it.

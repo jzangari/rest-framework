@@ -2,7 +2,7 @@ var resourceMethods = require('./resource');
 var url = require('url');
 
 var resources = {};
-module.exports.addResource = function addResource(resourceName, endpoints){
+module.exports.addResource =  function(resourceName, endpoints){
     resources[resourceName] = endpoints;
 };
 
@@ -11,30 +11,30 @@ module.exports.filterChain = filterChain;
 
 
 //Parse the URL and use the resources to select a resource.
-module.exports.handleRequest = function handleRequest(httpRequest, httpResponse){
+module.exports.handleRequest = function handleRequest(clientRequest, serverResponse){
     try {
-        console.log('Handling ' + httpRequest.method + ' Request for ' + httpRequest.url);
+        console.log('Handling ' + clientRequest.method + ' Request for ' + clientRequest.url);
 
         // Since most of the APIs I build tend to deal strictly with the media application/json, even in production,
         // I am going to make an assumption and kick out anything that isn't json. Leaving undefined to make testing easier for now
-        var contentType = httpRequest.headers['content-type'];
+        var contentType = clientRequest.headers['content-type'];
         console.log('Request has content type: ' + contentType);
-        if ((httpRequest.method != 'GET') && (httpRequest.method != 'DELETE') && (contentType != 'application/json') && (contentType != undefined)) {
+        if ((clientRequest.method != 'GET') && (clientRequest.method != 'DELETE') && (contentType != 'application/json') && (contentType != undefined)) {
             console.log('Unsupported media type from postRequest: ' + contentType);
-            httpResponse.writeHead(415, 'Resource only supports application/json');
-            httpResponse.end();
+            serverResponse.writeHead(415, 'Resource only supports application/json');
+            serverResponse.end();
         }
 
-        runFilterChainAndDispatch(httpRequest, httpResponse);
+        runFilterChainAndDispatch(clientRequest, serverResponse);
     //Node likes to die at the slightest error. I don't want it to die at the slightest error.
     } catch(err){
         console.log(err.stack);
-        httpResponse.writeHead(500);
-        httpResponse.end("There was a Server Error while processing your request");
+        serverResponse.writeHead(500);
+        serverResponse.end("There was a Server Error while processing your request");
     }
 };
 
-var runFilterChainAndDispatch = function(httpRequest, httpResponse){
+var runFilterChainAndDispatch = function(clientRequest, serverResponse){
     if(filterChain[filterChain.length-1] != dispatch){
         filterChain[filterChain.length] = dispatch
     }
@@ -42,7 +42,7 @@ var runFilterChainAndDispatch = function(httpRequest, httpResponse){
     function next() {
         var middleware = chainCopy.shift();
         if (middleware && typeof middleware === 'function') {
-            middleware.call(this, httpRequest, httpResponse, next);
+            middleware.call(this, clientRequest, serverResponse, next);
         }
         return this;
     }
@@ -50,7 +50,7 @@ var runFilterChainAndDispatch = function(httpRequest, httpResponse){
     return next();
 }
 
-function dispatch(clientRequest, serverResponse){
+var dispatch = function(clientRequest, serverResponse){
     //Look Up Resource by the first URL token, error if not found.
     console.log('Dispatching request to mapped service/resource based on http method');
     //If there is a '?', split the path on it to find the resource.
@@ -113,7 +113,7 @@ function dispatch(clientRequest, serverResponse){
 }
 
 //This function sets up the event handling to read the body of the request, then calls the httpMethod.
-function readBodyEventHandling(clientRequest, serverResponse, httpMethod, service, urlTokens) {
+var readBodyEventHandling = function(clientRequest, serverResponse, httpMethod, service, urlTokens) {
     var body, methodCalled = false;
     clientRequest.on('data', function (data) {
         body = data.toString();
