@@ -80,7 +80,7 @@ var dispatch = function(clientRequest, serverResponse){
     //Switch on the method and call the service
     switch(clientRequest.method){
         case 'POST':
-            if(typeof service.save === 'function'){
+            if(typeof service.post === 'function'){
                 readBodyEventHandling(clientRequest, serverResponse, resourceMethods.POST, service, undefined);
             } else {
                 serverResponse.writeHead(405);
@@ -88,7 +88,7 @@ var dispatch = function(clientRequest, serverResponse){
             }
             break;
         case 'PUT':
-            if(typeof service.update === 'function'){
+            if(typeof service.put === 'function'){
                 readBodyEventHandling(clientRequest, serverResponse, resourceMethods.PUT, service, urlTokens);
             } else {
                 serverResponse.writeHead(405);
@@ -114,13 +114,18 @@ var dispatch = function(clientRequest, serverResponse){
 
 //This function sets up the event handling to read the body of the request, then calls the httpMethod.
 var readBodyEventHandling = function(clientRequest, serverResponse, httpMethod, service, urlTokens) {
-    var body, methodCalled = false;
+    var body = '', methodCalled = false;
     clientRequest.on('data', function (data) {
         body = data.toString();
     });
     clientRequest.on('end', function () {
         methodCalled = true;
-        if(urlTokens == undefined){
+
+        if(body == ''){
+            serverResponse.writeHead(400)
+            serverResponse.end('Empty or Invalid Request Body');
+        }
+        if(urlTokens == undefined ){
             httpMethod(clientRequest, serverResponse, body, service);
         } else {
             httpMethod(clientRequest, serverResponse, body, urlTokens[2], service);

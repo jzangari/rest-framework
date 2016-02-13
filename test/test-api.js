@@ -16,7 +16,7 @@ describe('Test Configurations Resource',function(){
     after(function () {
         server.close();
     });
-    it('Create configuration, update it, get it, and check it for changes',function(done) {
+    it('Create configuration, put it, get it, and check it for changes',function(done) {
         //Create a new configuration
         endpoint
             .post('/configurations')

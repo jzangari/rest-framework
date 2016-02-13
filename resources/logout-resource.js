@@ -2,15 +2,26 @@ var authenticationService = require('./../services/authentication-service');
 var error = require('../rest-api/error');
 var mongoDataAccess = require('./../data/mongo-data-access');
 
+var configurationSchema = {
+    "id": "/LoginAttempt",
+    "type": "object",
+    "properties": {
+        "logout": {"type":"boolean"},
+        "required": []
+    }
+};
+
+LogoutResource.inputSchema =  configurationSchema;
+
 function LogoutResource(){
     this.resourceName = LogoutResource.resourceName;
 
     //Update takes the form of PUTing {"logout":true} to the /logout/<token>
-    this.update = function(token, object, successCallback, errorCallback){
+    this.put = function(token, object, successCallback, errorCallback){
         authenticationService.invalidateAuthorization(token, successCallback, errorCallback);
     };
 
-    this.save = function(object, successCallback, errorCallback){
+    this.post = function(object, successCallback, errorCallback){
         errorCallback(new Error(401, 'Unauthorized'));
     };
     this.getById =function(id, successCallback, errorCallback) {

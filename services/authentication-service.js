@@ -27,7 +27,7 @@ module.exports.authenticate = function(loginAttempt, successCallback, failureCal
     //Just quick and dirty password checking for now. Find a match!
     mongoDataAccess.find({"$and":[{"username":{"$eq":loginAttempt.username}},{"password":{"$eq":loginAttempt.password}}]}
         , undefined, undefined, 'users', function(users){
-        //If we find one user, create ans save a token for the user.
+        //If we find one user, create ans post a token for the user.
         if(users.length == 1){
             console.log('Authorization Token created for: ' + loginAttempt.username);
             var token = {
@@ -36,7 +36,7 @@ module.exports.authenticate = function(loginAttempt, successCallback, failureCal
                 "valid":true,
                 "user":users[0].body.username
             };
-            mongoDataAccess.save(token, 'authorizationTokens', successCallback, failureCallback);
+            mongoDataAccess.post(token, 'authorizationTokens', successCallback, failureCallback);
         } else {
             failureCallback(new Error(401, 'Unauthorized'));
         }
@@ -54,7 +54,7 @@ module.exports.invalidateAuthorization = function(token, successCallback, errorC
         var updates = {"valid":false};
         if(tokens.length == 1){
             var id = tokens[0].id;
-            mongoDataAccess.update(id, updates, 'authorizationTokens',
+            mongoDataAccess.put(id, updates, 'authorizationTokens',
                 successCallback,
                 errorCallback);
         } else {
@@ -83,7 +83,7 @@ module.exports.authorizeToken = function(token, authorized){
 
 var invalidateTokens = function(tokens, failureCallback){
     for(var current in tokens){
-        mongoDataAccess.update(tokens[current].id, {"valid":false}, 'authorizationTokens',
+        mongoDataAccess.put(tokens[current].id, {"valid":false}, 'authorizationTokens',
             function(){console.error('Token invalidated: +' + JSON.stringify(tokens[current]))},
             function(err){
                 console.error('Error while invalidating token:\n' + JSON.stringify(err) + '\n' + JSON.stringify(tokens));

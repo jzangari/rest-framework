@@ -4,7 +4,7 @@ var ObjectID = require('mongodb').ObjectID;
 var assert = require('assert');
 var url = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/test'
 
-module.exports.save = function(object, collectionName, successCallback, errorCallback){
+module.exports.post = function(object, collectionName, successCallback, errorCallback){
     callHandlerFunction([object], collectionName, successCallback, errorCallback, insertDocument);
 };
 
@@ -16,7 +16,7 @@ module.exports.getAll = function(collectionName, successCallback, errorCallback)
     callHandlerFunction([], collectionName, successCallback, errorCallback, getAllDocumentsInCollection);
 };
 
-module.exports.update = function(id, object, collectionName, successCallback, errorCallback){
+module.exports.put = function(id, object, collectionName, successCallback, errorCallback){
     callHandlerFunction([id, object], collectionName, successCallback, errorCallback, updateDocument);
 };
 

@@ -50,31 +50,35 @@ module.exports = {
         } catch(err){
             responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Invalid JSON sent.\n' + err));
         }
-        service.save(bodyObject,
-            function(response){
-                sendSingleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, response)
-            },
-            function(error){
-                responseBuilder.writeErrorResponse(serverResponse, error);
-            }
-        );
+        if(bodyObject != undefined) {
+            service.post(bodyObject,
+                function (response) {
+                    sendSingleResponse(serverResponse, 201, clientRequest.headers['host'], service.resourceName, response)
+                },
+                function (error) {
+                    responseBuilder.writeErrorResponse(serverResponse, error);
+                }
+            )
+        }
     },
 
     'PUT' : function put(clientRequest, serverResponse, body, id, service){
         console.log('PUT method on resource: ' + service.resourceName + ' with id: ' + id);
         if(id == ''){
-            responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Cannot update a collection root.'));
+            responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Cannot put a collection root.'));
         } else {
             try {
                 var bodyObject = JSON.parse(body);
             } catch(err){
                 responseBuilder.writeErrorResponse(serverResponse, new Error(400, 'Invalid JSON sent.\n' + err));
             }
-            service.update(id, bodyObject,
-                function () {sendEmptyResponse(serverResponse);},
-                function (error) {
-                    responseBuilder.writeErrorResponse(serverResponse, error);
-                });
+            if(bodyObject != undefined){
+                service.put(id, bodyObject,
+                    function () {sendEmptyResponse(serverResponse);},
+                    function (error) {
+                        responseBuilder.writeErrorResponse(serverResponse, error);
+                    });
+            }
         }
     },
 
