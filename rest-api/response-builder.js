@@ -7,7 +7,9 @@ module.exports.writeHeaders = function(serverResponse, bodyLength, returnCode){
 };
 
 module.exports.sendErrorResponse = function(serverResponse, error){
-    var outputString = JSON.stringify(error);
+    try {
+        var outputString = JSON.stringify(error);
+    }
     this.writeHeaders(serverResponse, Buffer.byteLength(outputString, 'utf-8'), error['status']);
     serverResponse.end(outputString);
 }

@@ -45,10 +45,7 @@ var findDocumentById = function(id, collectionName, db, callback) {
         callback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
     }
     db.collection(collectionName). find({"_id": {"$eq":objectId}}).limit(1).next(function(err, res){
-        if(err){
-            console.log(err);
-            callback(err);
-        }
+        checkError(err, callback);
         if(res == null || res == undefined){
             callback(new Error(404, 'Not Found: ' + id ));
         } else {
