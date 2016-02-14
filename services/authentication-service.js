@@ -1,32 +1,36 @@
 var Error = require('../rest-api/error');
 var mongoDataAccess = require('../data/mongo-data-access');
 
-var i =0;
-console.log(i);
+
 if(false) {
+    var i =0;
+    console.log(i);
     setInterval(function () {
-            console.log('Cleaning up expired tokens...');
-            mongoDataAccess.find({"$and": [{"valid": {"$eq": true}}, {"expires": {"$lte": new Date().toISOString()}}]},
-                undefined, undefined, 'authorizationTokens',
-                function (tokens) { //success
-                    console.log(tokens.length + ' expired tokens found.')
-                    if (tokens.length >= 1) invalidateTokens(tokens);
-                },
-                function (err) { //error
+        console.log('Cleaning up expired tokens...');
+        mongoDataAccess.find({"$and": [{"valid": {"$eq": true}}, {"expires": {"$lte": new Date().toISOString()}}]},
+            undefined, undefined, 'authorizationTokens',
+            function (err, tokens) { //success
+                if(err){
+
                     console.log(JSON.stringify(err));
                 }
-            );
-        },
+                console.log(tokens.length + ' expired tokens found.')
+                if (tokens.length >= 1) invalidateTokens(tokens);
+            }
+        )},
         30000 //30 second interval
     );
 }
 
 // loginAttempt & user = { "username":"<username>", "password":"<password>" }
-module.exports.authenticate = function(loginAttempt, successCallback, failureCallback){
+module.exports.authenticate = function(loginAttempt, callback){
     console.log('Login Attempt for: ' + loginAttempt.username)
     //Just quick and dirty password checking for now. Find a match!
     mongoDataAccess.find({"$and":[{"username":{"$eq":loginAttempt.username}},{"password":{"$eq":loginAttempt.password}}]}
-        , undefined, undefined, 'users', function(users){
+        , undefined, undefined, 'users', function(error, users){
+        if(error){
+            callback(error);
+        }
         //If we find one user, create ans post a token for the user.
         if(users.length == 1){
             console.log('Authorization Token created for: ' + loginAttempt.username);
@@ -36,61 +40,64 @@ module.exports.authenticate = function(loginAttempt, successCallback, failureCal
                 "valid":true,
                 "user":users[0].body.username
             };
-            mongoDataAccess.post(token, 'authorizationTokens', successCallback, failureCallback);
+            mongoDataAccess.post(token, 'authorizationTokens', callback);
         } else {
-            failureCallback(new Error(401, 'Unauthorized'));
+            callback(new Error(401, 'Unauthorized'));
         }
-    }, failureCallback);
+    });
 };
 
 
-module.exports.getToken = function(id, successCallback, errorCallback){
-    mongoDataAccess.getById(id, 'authorizationTokens', successCallback, errorCallback);
+module.exports.getToken = function(id, callback){
+    mongoDataAccess.getById(id, 'authorizationTokens', callback);
 };
 
 
-module.exports.invalidateAuthorization = function(token, successCallback, errorCallback){
-    mongoDataAccess.find({"token":token}, undefined, undefined, 'authorizationTokens', function(tokens){
+module.exports.invalidateAuthorization = function(token, callback){
+    mongoDataAccess.find({"token":token}, undefined, undefined, 'authorizationTokens', function(error, tokens){
+        if(error){
+            callback(error);
+        }
         var updates = {"valid":false};
         if(tokens.length == 1){
             var id = tokens[0].id;
             mongoDataAccess.put(id, updates, 'authorizationTokens',
-                successCallback,
-                errorCallback);
+                callback);
         } else {
             console.error('Authorization Token Collision! Invalidating all of them.');
-            invalidateTokens(tokens, errorCallback);
+            invalidateTokens(tokens, callback);
         }
-    }, errorCallback);
+    });
 }
 
-module.exports.authorizeToken = function(token, authorized){
-    mongoDataAccess.find({"$and":[{"token":{"$eq":token}},{"valid":{"$eq":true}}]}, undefined, undefined, 'authorizationTokens', function(tokens){
+module.exports.authorizeToken = function(token, authorizedCallback){
+    mongoDataAccess.find({"$and":[{"token":{"$eq":token}},{"valid":{"$eq":true}}]}, undefined, undefined, 'authorizationTokens', function(error, tokens){
+        if(error){
+            authorizedCallback(false);
+        }
         if(tokens.length == 1){
-            authorized(true);
+            authorizedCallback(true);
         } else {
             console.log('Authorization Token Collision! Invalidating all of them.');
             invalidateTokens(tokens, function(error){
                 console.log(error);
-                authorized(false);
+                authorizedCallback(false);
             });
         }
-    }, function(err){
-        console.log('Failed while authorizing token: ' + token + ' with error ' + err);
-        return false;
     });
 }
 
-var invalidateTokens = function(tokens, failureCallback){
+var invalidateTokens = function(tokens){
     for(var current in tokens){
         mongoDataAccess.put(tokens[current].id, {"valid":false}, 'authorizationTokens',
-            function(){console.error('Token invalidated: +' + JSON.stringify(tokens[current]))},
             function(err){
-                console.error('Error while invalidating token:\n' + JSON.stringify(err) + '\n' + JSON.stringify(tokens));
+                if(err){
+                    console.error('Token invalidated: +' + JSON.stringify(tokens[current]))
+                }else{
+                    console.error('Error while invalidating token:\n' + JSON.stringify(err) + '\n' + JSON.stringify(tokens))
+                }
             });
     }
-    if(failureCallback) failureCallback(new Error(500,
-        'Multiple Token Instances Found. All of them have been De-authorized as a security measure.'));
 }
 
 

@@ -20,14 +20,14 @@ function LoginResource(){
     this.resourceName = LoginResource.resourceName;
     this.post = authenticationService.authenticate;
     this.getById = authenticationService.getToken;
-    this.getAll =  function(successCallback, errorCallback){
-        errorCallback(new Error(401, 'Unauthorized'));
+    this.getAll =  function(callback){
+        callback(new Error(401, 'Unauthorized'));
     };
-    this.put = function(id, object, successCallback, errorCallback){
-        errorCallback(new Error(401, 'Unauthorized'));
+    this.put = function(id, object, callback){
+        callback(new Error(401, 'Unauthorized'));
     }
-    this.delete = function(id, successCallback, errorCallback){
-        errorCallback(new Error(401, 'Unauthorized'));
+    this.delete = function(id, callback){
+        callback(new Error(401, 'Unauthorized'));
     }
 };
 
