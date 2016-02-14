@@ -191,7 +191,9 @@ var buildAndSendSingleResponse = function(response, callback){
 
 var checkError = function(err, callback){
     if(err){
-        callback(new Error(500, JSON.stringify(err)));
+        var error = new Error(500, JSON.stringify(err))
+        console.log(error);
+        callback(error);
     }
 };
 
