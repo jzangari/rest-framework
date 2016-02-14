@@ -54,7 +54,7 @@ module.exports = {
         if(bodyObject != undefined) {
             resource.post(bodyObject,function(err,response){
                 if(err){
-                    responseBuilder.sendErrorResponse(serverResponse, error);
+                    responseBuilder.sendErrorResponse(serverResponse, err);
                 }
                 else{
                     responseBuilder.sendSingleResponse(serverResponse, 201, clientRequest.headers['host'], resource.resourceName, response)
