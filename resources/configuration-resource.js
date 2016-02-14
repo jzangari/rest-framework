@@ -26,30 +26,30 @@ ConfigurationResource.inputSchema =  configurationSchema;
 function ConfigurationResource(){
     this.resourceName = ConfigurationResource.resourceName;
 
-    this.post = function(configuration, successCallback, errorCallback){
+    this.post = function(configuration, callback){
         //TODO Validate the input configuration. I know, I know, still here. I've been googling.
-        mongoDataAccess.post(configuration, this.resourceName, successCallback, errorCallback);
+        mongoDataAccess.post(configuration, this.resourceName, callback);
     };
 
-    this.getById = function(id, successCallback, errorCallback){
-        mongoDataAccess.getById(id, this.resourceName, successCallback, errorCallback);
+    this.getById = function(id, callback){
+        mongoDataAccess.getById(id, this.resourceName, callback);
     };
 
-    this.getAll = function(successCallback, errorCallback){
-        mongoDataAccess.getAll(this.resourceName, successCallback, errorCallback);
+    this.getAll = function(callback){
+        mongoDataAccess.getAll(this.resourceName, callback);
     };
 
-    this.put = function(id, configurationUpdates, successCallback, errorCallback){
+    this.put = function(id, configurationUpdates, callback){
         //TODO Validate the input configuration. I know, I know.. Still here. I've been googling.
-        mongoDataAccess.put(id, configurationUpdates, this.resourceName, successCallback, errorCallback);
+        mongoDataAccess.put(id, configurationUpdates, this.resourceName, callback);
     };
 
-    this.del = function(id, successCallback, errorCallback){
-        mongoDataAccess.delete(id, this.resourceName, successCallback, errorCallback);
+    this.del = function(id, callback){
+        mongoDataAccess.delete(id, this.resourceName, callback);
     };
 
-    this.find = function(queryParams, sortField, paginationData, successCallback, errorCallback){
-        mongoDataAccess.find(queryParams, sortField, paginationData, this.resourceName, successCallback, errorCallback);
+    this.find = function(queryParams, sortField, paginationData, callback){
+        mongoDataAccess.find(queryParams, sortField, paginationData, this.resourceName, callback);
     };
 }
 

@@ -4,61 +4,62 @@ var ObjectID = require('mongodb').ObjectID;
 var assert = require('assert');
 var url = process.env.MONGOLAB_URI || 'mongodb://localhost:27017/test'
 
-module.exports.post = function(object, collectionName, successCallback, errorCallback){
-    callHandlerFunction([object], collectionName, successCallback, errorCallback, insertDocument);
+module.exports.post = function(object, collectionName, callback){
+    callHandlerFunction([object], collectionName, callback, insertDocument);
 };
 
-module.exports.getById = function(id, collectionName, successCallback, errorCallback){
-    callHandlerFunction([id], collectionName, successCallback, errorCallback, findDocumentById);
+module.exports.getById = function(id, collectionName, callback){
+    callHandlerFunction([id], collectionName, callback, findDocumentById);
 };
 
-module.exports.getAll = function(collectionName, successCallback, errorCallback){
-    callHandlerFunction([], collectionName, successCallback, errorCallback, getAllDocumentsInCollection);
+module.exports.getAll = function(collectionName, callback){
+    callHandlerFunction([], collectionName, callback, getAllDocumentsInCollection);
 };
 
-module.exports.put = function(id, object, collectionName, successCallback, errorCallback){
-    callHandlerFunction([id, object], collectionName, successCallback, errorCallback, updateDocument);
+module.exports.put = function(id, object, collectionName, callback){
+    callHandlerFunction([id, object], collectionName, callback, updateDocument);
 };
 
-module.exports.delete = function(id, collectionName, successCallback, errorCallback){
-    callHandlerFunction([id], collectionName, successCallback, errorCallback, deleteDocument);
-};
-
-
-module.exports.find = function(queryPararms, sortField, paginationData, collectionName, successCallback, errorCallback){
-    callHandlerFunction([queryPararms, sortField, paginationData], collectionName, successCallback, errorCallback, findDocument);
+module.exports.delete = function(id, collectionName, callback){
+    callHandlerFunction([id], collectionName, callback, deleteDocument);
 };
 
 
-var insertDocument = function(object, collectionName, db, successCallback, errorCallback) {
+module.exports.find = function(queryPararms, sortField, paginationData, collectionName, callback){
+    callHandlerFunction([queryPararms, sortField, paginationData], collectionName, callback, findDocument);
+};
+
+
+var insertDocument = function(object, collectionName, db, callback) {
     db.collection(collectionName).insertOne(object, function(err) {
-        buildAndSendSingleResponse(err, object, successCallback, errorCallback);
+        checkError(err, callback);
+        buildAndSendSingleResponse(object, callback);
     });
 };
 
-var findDocumentById = function(id, collectionName, db, successCallback, errorCallback) {
+var findDocumentById = function(id, collectionName, db, callback) {
      try {
         var objectId = ObjectID(id);
     } catch (err){
-        console.log(err);
-        errorCallback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
+        console.log("Error while creating ObjectID:" +err);
+        callback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
     }
-    db.collection(collectionName).findOne({"_id":objectId}, function(err, res){
+    db.collection(collectionName). find({"_id": {"$eq":objectId}}).limit(1).next(function(err, res){
         if(res == null || res == undefined){
-            errorCallback(new Error(404, 'Not Found: ' + id ));
+            callback(null, new Error(404, 'Not Found: ' + id ));
         } else {
-            buildAndSendSingleResponse(err, res, successCallback, errorCallback);
+            buildAndSendSingleResponse(res, callback);
         }
     });
 };
 
-var getAllDocumentsInCollection = function(collectionName, db, successCallback, errorCallback){
+var getAllDocumentsInCollection = function(collectionName, db, callback){
     db.collection(collectionName).find({}, function(err, cursor){
         var returnItems = []
         cursor.toArray(function(err, responses){
             //For each item delete the mongo and create a respone object to put into the return array.
             for(var current in responses){
-                checkError(err, errorCallback);
+                checkError(err, callback);
                 //Remove the MongoID from the document and create a response the Resource can map.
                 var id =  responses[current]._id;
                 delete responses[current]['_id'];
@@ -67,17 +68,17 @@ var getAllDocumentsInCollection = function(collectionName, db, successCallback, 
                     "body":responses[current]
                 });
             }
-            successCallback(returnItems);
+            callback(null,returnItems);
         });
     });
 }
 
-var updateDocument = function(id, object, collectionName, db, successCallback, errorCallback) {
+var updateDocument = function(id, object, collectionName, db, callback) {
     try {
         var objectId = ObjectID(id);
     } catch (err){
-        console.log(err);
-        errorCallback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
+        console.log("Error while creating ObjectID:" +err);
+        callback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
     }
     //Set up updates object that mongo uses.
     var updates = {
@@ -85,30 +86,30 @@ var updateDocument = function(id, object, collectionName, db, successCallback, e
     };
     db.collection(collectionName).updateOne({"_id":objectId}, updates, function(err, res){
         if(res.modifiedCount == 1){
-           successCallback();
+           callback();
         } else {
-            errorCallback(new Error(404, 'Not Found: ' + id ));
+            callback(null, new Error(404, 'Not Found: ' + id ));
         }
     });
 };
 
-var deleteDocument = function(id, collectionName, db, successCallback, errorCallback) {
+var deleteDocument = function(id, collectionName, db, callback) {
     //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
     var idSize = encodeURI(id).split(/%..|./).length - 1;
     if(idSize < 12){
-        errorCallback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
+        callback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
     }
     db.collection(collectionName).findOneAndDelete({"_id":ObjectID(id)}, function(err, res){
         if(!err){
-            successCallback();
+            callback();
         } else {
-            errorCallback(new Error(404, 'Not Found: ' + id ));
+            callback(null, new Error(404, 'Not Found: ' + id ));
         }
     });
 };
 
 
-var findDocument = function(queryParams, sortField, paginationData, collectionName, db, successCallback, errorCallback) {
+var findDocument = function(queryParams, sortField, paginationData, collectionName, db, callback) {
     db.collection(collectionName).find(queryParams, function(err, cursor){
         var returnItems = []
         if(sortField != undefined){
@@ -124,7 +125,7 @@ var findDocument = function(queryParams, sortField, paginationData, collectionNa
         cursor.toArray(function(err, responses){
             //For each item delete the mongo and create a response object to put into the return array.
             for(var current in responses){
-                checkError(err, errorCallback);
+                checkError(err, callback);
                 //Remove the MongoID from the document and create a response the Resource can map.\
                 var id = responses[current]._id;
                 delete responses[current]['_id'];
@@ -133,58 +134,53 @@ var findDocument = function(queryParams, sortField, paginationData, collectionNa
                     "body":responses[current]
                 });
             }
-            successCallback(returnItems);
+            callback(null,returnItems);
         });
     });
 };
 
-var callHandlerFunction = function(input, collectionName, successCallback, errorCallback, method){
+var callHandlerFunction = function(input, collectionName, callback, method){
     MongoClient.connect(url, function(err, db) {
-        checkError(err, errorCallback);
+        checkError(err, callback);
         //If there is no object passed in, call the method without it.
         if(input == null || input.length == 0){
             method(collectionName ,db,
-                function(response) {
+                function(err,response) {
                     db.close();
-                    successCallback(response);
-                },
-                errorCallback
+                    callback(err, response);
+                }
             );
         //Otherwise, call it with the object as the first argument.
         } else if(input.length == 1) {
             method(input[0], collectionName, db,
-                function (response) {
+                function (err, response) {
                     db.close();
-                    successCallback(response);
-                },
-                errorCallback
+                    callback(err, response);
+                }
             );
         } else if(input.length == 2) {
             method(input[0], input[1], collectionName, db,
-                function (response) {
+                function (err, response) {
                     db.close();
-                    successCallback(response);
-                },
-                errorCallback
+                    callback(err, response);
+                }
             );
         } else if(input.length == 3) {
             method(input[0], input[1], input[2], collectionName, db,
-                function (response) {
+                function (err, response) {
                     db.close();
-                    successCallback(response);
-                },
-                errorCallback
+                    callback(err, response);
+                }
             );
         }
     });
 }
 
-var buildAndSendSingleResponse = function(err, response, successCallback, errorCallback){
-        checkError(err, errorCallback);
+var buildAndSendSingleResponse = function(response, callback){
         //Remove the MongoID from the document and create a response the Resource can map.
         var id = response._id;
         delete response['_id'];
-        successCallback({
+        callback(null, {
             "id":id,
             "body":response
         });

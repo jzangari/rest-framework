@@ -21,7 +21,7 @@ module.exports.filter = function(clientRequest, serverResponse, next) {
                     //Send error if the token wasn't valid.
                     if(!authorized){
                         console.log('Authorization failed for: ' + token);
-                        responseBuilder.writeErrorResponse(serverResponse, new Error(401, "Unauthorized"));
+                        responseBuilder.sendErrorResponse(serverResponse, new Error(401, "Unauthorized"));
                     //Otherwise, next piece in the chain!
                     } else {
                         return next();
@@ -31,7 +31,7 @@ module.exports.filter = function(clientRequest, serverResponse, next) {
         //No token, no access.
         } else {
             console.log('Request unauthorized');
-            responseBuilder.writeErrorResponse(serverResponse, new Error(401, "Unauthorized"));
+            responseBuilder.sendErrorResponse(serverResponse, new Error(401, "Unauthorized"));
         }
     }
 };

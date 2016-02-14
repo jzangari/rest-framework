@@ -14,24 +14,25 @@ var configurationSchema = {
 LogoutResource.inputSchema =  configurationSchema;
 
 function LogoutResource(){
+    this.inputSchema = LogoutResource.inputSchema;
     this.resourceName = LogoutResource.resourceName;
 
     //Update takes the form of PUTing {"logout":true} to the /logout/<token>
-    this.put = function(token, object, successCallback, errorCallback){
-        authenticationService.invalidateAuthorization(token, successCallback, errorCallback);
+    this.put = function(token, object, callback){
+        authenticationService.invalidateAuthorization(token, callback);
     };
 
-    this.post = function(object, successCallback, errorCallback){
-        errorCallback(new Error(401, 'Unauthorized'));
+    this.post = function(object, callback){
+        callback(new Error(401, 'Unauthorized'));
     };
-    this.getById =function(id, successCallback, errorCallback) {
-        errorCallback(new Error(401, 'Unauthorized'));
+    this.getById =function(id, callback) {
+        callback(new Error(401, 'Unauthorized'));
     };
-    this.getAll =  function(successCallback, errorCallback){
-        errorCallback(new Error(401, 'Unauthorized'));
+    this.getAll =  function(callback){
+        callback(new Error(401, 'Unauthorized'));
     };
-    this.delete = function(id, successCallback, errorCallback){
-        errorCallback(new Error(401, 'Unauthorized'));
+    this.delete = function(id, callback){
+        callback(new Error(401, 'Unauthorized'));
     };
 };
 
