@@ -45,8 +45,12 @@ var findDocumentById = function(id, collectionName, db, callback) {
         callback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
     }
     db.collection(collectionName). find({"_id": {"$eq":objectId}}).limit(1).next(function(err, res){
+        if(err){
+            console.log(err);
+            callback(err);
+        }
         if(res == null || res == undefined){
-            callback(null, new Error(404, 'Not Found: ' + id ));
+            callback(new Error(404, 'Not Found: ' + id ));
         } else {
             buildAndSendSingleResponse(res, callback);
         }
@@ -57,9 +61,9 @@ var getAllDocumentsInCollection = function(collectionName, db, callback){
     db.collection(collectionName).find({}, function(err, cursor){
         var returnItems = []
         cursor.toArray(function(err, responses){
+            checkError(err, callback);
             //For each item delete the mongo and create a respone object to put into the return array.
             for(var current in responses){
-                checkError(err, callback);
                 //Remove the MongoID from the document and create a response the Resource can map.
                 var id =  responses[current]._id;
                 delete responses[current]['_id'];
@@ -85,6 +89,7 @@ var updateDocument = function(id, object, collectionName, db, callback) {
         "$set":object
     };
     db.collection(collectionName).updateOne({"_id":objectId}, updates, function(err, res){
+       checkError(err, callback);
         if(res.modifiedCount == 1){
            callback();
         } else {
@@ -94,12 +99,13 @@ var updateDocument = function(id, object, collectionName, db, callback) {
 };
 
 var deleteDocument = function(id, collectionName, db, callback) {
-    //Mongo freaks out if you try to create an ObjectID to search with that isn't the right size.
-    var idSize = encodeURI(id).split(/%..|./).length - 1;
-    if(idSize < 12){
-        callback(new Error(404, 'Not Found: ' + id + ' is an invalid identifier.'));
+    try {
+        var objectId = ObjectID(id);
+    } catch (err){
+        console.log("Error while creating ObjectID:" +err);
+        callback(new Error(400, 'The ID given was in valid or the request url info was bad.'))
     }
-    db.collection(collectionName).findOneAndDelete({"_id":ObjectID(id)}, function(err, res){
+    db.collection(collectionName).findOneAndDelete({"_id":objectId}, function(err, res){
         if(!err){
             callback();
         } else {
@@ -123,9 +129,9 @@ var findDocument = function(queryParams, sortField, paginationData, collectionNa
             cursor.limit(paginationData.pageSize);
         }
         cursor.toArray(function(err, responses){
+            checkError(err, callback);
             //For each item delete the mongo and create a response object to put into the return array.
             for(var current in responses){
-                checkError(err, callback);
                 //Remove the MongoID from the document and create a response the Resource can map.\
                 var id = responses[current]._id;
                 delete responses[current]['_id'];
