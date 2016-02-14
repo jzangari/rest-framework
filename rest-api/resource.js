@@ -8,7 +8,7 @@ module.exports = {
                 service.getById(id,
                     function(err, response){
                         if(err){
-                            responseBuilder.sendErrorResponse(serverResponse, error)
+                            responseBuilder.sendErrorResponse(serverResponse, err)
                         }else {
                             responseBuilder.sendSingleResponse(serverResponse, 200, clientRequest.headers['host'], service.resourceName, response)
                         }
