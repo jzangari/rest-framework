@@ -81,8 +81,8 @@ module.exports.authorizeToken = function(token, authorizedCallback){
             console.log('Authorization Token Collision! Invalidating all of them.');
             invalidateTokens(tokens, function(error){
                 console.log(error);
-                authorizedCallback(false);
             });
+            authorizedCallback(false);
         }
     });
 }
